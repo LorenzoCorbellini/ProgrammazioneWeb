@@ -1,0 +1,253 @@
+/* --- DARK MODE SALMONE ELEGANTE --- */
+:root {
+    --bg-main: #111827;
+    --surface: #1f2937;
+
+    --primary: #e97b6d;
+    --primary-dark: #c85f52;
+
+    --accent: #ffb4aa;
+    --accent-hover: #ffc8c1;
+
+    --text-main: #f3f4f6;
+    --text-soft: #d1d5db;
+
+    --border-soft: #374151;
+    --shadow: rgba(0,0,0,0.35);
+}
+
+/* --- BASE --- */
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+
+    font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
+
+    margin: 0;
+    padding: 0;
+}
+
+/* --- HEADER --- */
+h1 {
+    margin: 0;
+    padding: 40px 0;
+
+    font-size: 80px;
+    font-weight: 300;
+
+    letter-spacing: 8px;
+
+    background: linear-gradient(
+        135deg,
+        var(--primary),
+        var(--primary-dark)
+    );
+
+    color: white;
+
+    text-align: center;
+
+    border-bottom: 4px solid #ffb4aa;
+
+    box-shadow: 0 4px 20px var(--shadow);
+}
+
+/* --- NAVIGAZIONE --- */
+ol {
+    list-style-type: none;
+
+    font-size: 30px;
+
+    margin: 0;
+    padding: 20px 0;
+
+    background: linear-gradient(
+        180deg,
+        var(--primary),
+        var(--primary-dark)
+    );
+
+    position: relative;
+    float: left;
+
+    width: 15vw;
+
+    box-shadow: 4px 0 15px var(--shadow);
+}
+
+li a {
+    display: block;
+
+    color: rgba(255,255,255,0.9);
+
+    text-align: left;
+    text-decoration: none;
+
+    padding: 18px 30px;
+
+    border-left: 4px solid transparent;
+
+    transition: all 0.25s ease;
+}
+
+li a:hover:not(.active) {
+    background-color: rgba(255,255,255,0.12);
+
+    color: white;
+
+    border-left: 4px solid #ffe2dc;
+}
+
+.active {
+    background-color: rgba(255,255,255,0.15);
+
+    color: white !important;
+
+    font-weight: bold;
+
+    border-left: 4px solid white;
+}
+
+/* --- CONTENUTO PRINCIPALE --- */
+#content {
+    float: left;
+
+    margin: 40px 0 0 40px;
+    padding: 40px;
+
+    width: 70vw;
+    height: 60vh;
+
+    font-size: 30px;
+
+    background-color: var(--surface);
+
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+
+    overflow-y: auto;
+}
+
+/* --- INPUT E BOTTONI --- */
+input,
+button {
+    font-size: 24px;
+
+    padding: 12px 20px;
+
+    border-radius: 10px;
+}
+
+/* --- INPUT --- */
+input {
+    background-color: #111827;
+
+    color: var(--text-main);
+
+    border: 1px solid #4b5563;
+}
+
+input:focus {
+    outline: none;
+
+    border-color: var(--primary);
+
+    box-shadow: 0 0 10px rgba(233,123,109,0.25);
+}
+
+/* --- BOTTONI --- */
+button {
+    background-color: var(--primary);
+
+    color: white;
+
+    border: none;
+
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 5px 15px rgba(233,123,109,0.3);
+}
+
+/* --- CONTENITORE ANIMAZIONE --- */
+#container {
+    margin-top: 20px;
+
+    width: 90%;
+    height: 300px;
+
+    background: #111827;
+
+    border: 1px solid var(--border-soft);
+    border-radius: 15px;
+
+    position: relative;
+    overflow: hidden;
+}
+
+/* --- ELEMENTO ANIMATO --- */
+#animate {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    position: absolute;
+
+    background: linear-gradient(
+        135deg,
+        var(--primary),
+        var(--primary-dark)
+    );
+
+    box-shadow: 0 0 20px rgba(233,123,109,0.45);
+}
+
+/* --- FOOTER --- */
+footer {
+    position: fixed;
+
+    bottom: 0;
+    width: 100%;
+
+    padding: 20px 0;
+
+    font-size: 20px;
+
+    background: linear-gradient(
+        135deg,
+        var(--primary-dark),
+        var(--primary)
+    );
+
+    color: rgba(255,255,255,0.92);
+
+    text-align: center;
+
+    border-top: 1px solid rgba(255,255,255,0.15);
+
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+}
+
+/* --- UTILITY --- */
+.stile1 {
+    background: var(--bg-main);
+}
+
+.stile2 {
+    background: var(--surface);
+    color: var(--accent);
+}

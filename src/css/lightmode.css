@@ -1,0 +1,198 @@
+/* --- PALETTE ELEGANTE E LEGGIBILE --- */
+:root {
+    --bg-main: #fff7f5;          /* Sfondo chiaro caldo */
+    --surface: #ffffff;          /* Card / contenitori */
+
+    --primary: #e97b6d;          /* Salmone principale */
+    --primary-dark: #c85f52;     /* Salmone scuro */
+    
+    --accent: #8b4d46;           /* Terracotta elegante */
+    --accent-hover: #b5655c;     /* Hover caldo */
+
+    --text-dark: #1f2937;        /* Grigio molto scuro */
+    --text-light: #fdfdfd;       /* Testo chiaro */
+
+    --border-soft: #e7d6d2;      /* Bordi morbidi */
+    --shadow: rgba(0,0,0,0.08);
+}
+
+/* --- BASE --- */
+body {
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    font-family: "Elms Sans", sans-serif;
+    margin: 0;
+    padding: 0;
+    font-weight: 200;
+}
+
+/* --- HEADER --- */
+h1 {
+    margin: 0;
+    padding: 40px 0;
+    font-size: 80px;
+    font-weight: 200;
+    letter-spacing: 8px;
+
+    background: var(--primary);
+    color: var(--text-light);
+
+    text-align: center;
+    border-bottom: 5px solid var(--primary-dark);
+    box-shadow: 0 4px 20px var(--shadow);
+}
+
+/* --- NAVIGAZIONE --- */
+ol {
+    list-style-type: none;
+    font-size: 30px;
+
+    margin: 0;
+    padding: 20px 0;
+
+    background-color: var(--primary);
+    position: relative;
+    float: left;
+    width: 15vw;
+
+    box-shadow: 4px 0 15px var(--shadow);
+}
+
+li a {
+    display: block;
+
+    color: var(--text-light);
+
+    text-align: left;
+    padding: 18px 30px;
+
+    text-decoration: none;
+
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+li a:hover:not(.active) {
+    background-color: rgba(255,255,255,0.12);
+    color: #ffffff;
+    border-left: 4px solid #ffd2cb;
+}
+
+.active {
+    background-color: var(--surface);
+    color: var(--accent) !important;
+    font-weight: bold;
+    border-left: 4px solid var(--accent);
+}
+
+/* --- CONTENUTO --- */
+#content {   
+    float: left;
+
+    margin: 40px 0 0 40px;
+    padding: 40px;
+
+    font-size: 30px;
+
+    background-color: var(--surface);
+
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+
+    height: 60vh;
+    width: 70vw;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+
+    overflow-y: auto;
+}
+
+/* --- FORM --- */
+input, button {
+    font-size: 24px;
+    padding: 12px 20px;
+
+    border-radius: 10px;
+    border: 1px solid #d6c4c0;
+}
+
+/* --- BOTTONI --- */
+button {
+    background-color: var(--primary);
+    color: var(--text-light);
+
+    border: none;
+
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 5px 15px rgba(233,123,109,0.25);
+}
+
+/* --- ANIMAZIONE --- */
+#container {
+    margin-top: 20px;
+
+    width: 90%;
+    height: 300px;
+
+    background: #fffdfc;
+
+    border: 1px solid var(--border-soft);
+    border-radius: 15px;
+
+    position: relative;
+    overflow: hidden;
+}
+
+#animate {
+    width: 40px;
+    height: 40px;
+
+    border-radius: 50%;
+
+    position: absolute;
+
+    background-color: var(--primary-dark);
+
+    box-shadow: 0 0 15px rgba(200,95,82,0.35);
+}
+
+/* --- FOOTER --- */
+footer {          
+    position: fixed;
+
+    font-size: 20px;
+
+    width: 100%;
+    bottom: 0;
+
+    background: var(--primary);
+    color: rgba(255,255,255,0.9);
+
+    text-align: center;
+
+    padding: 20px 0;
+
+    border-top: 1px solid var(--primary-dark);
+}
+
+/* --- UTILITY --- */
+.stile1 {
+    background: var(--bg-main);
+}
+
+.stile2 {
+    background: var(--surface);
+    color: var(--accent);
+}
