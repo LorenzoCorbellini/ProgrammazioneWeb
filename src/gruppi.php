@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="generator" content="HTML"/>
-	<title>Gruppi</title>
+	<title>SalMeet</title>
 	
 	<link rel="stylesheet" href="./css/lightmode.css">
 	<link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,7 +14,7 @@
 </head>
 
 <body>
-	<header><h1 id="hcod1">SalMeet</h1></header>
+	<header><h1 id="hcod1">Gruppi</h1></header>
 <?php	
 	include 'nav.html';
 	include 'footer.html';
