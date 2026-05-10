@@ -19,4 +19,4 @@ DB_NAME=my_plainasia
 DB_USER=
 DB_PASS=
 ```
-e impostare le credenziali per il database (si trovano su Altervista nella sezione "Gestisci Database").
+e impostare le credenziali per il database.
