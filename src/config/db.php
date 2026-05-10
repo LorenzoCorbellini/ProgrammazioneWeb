@@ -1,3 +1,4 @@
+//File di configurazione per la connessione al database
 <?php
 $host     = '127.0.0.1';
 $dbname   = 'my_plainasia';
