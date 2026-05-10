@@ -9,3 +9,14 @@
 - Tabella per CRUD: Bacheca
 - Interfaccia: Interfaccia 5
 - Palette: Salmone
+
+# Setup
+
+Creare un file .env in src/.env
+```
+DB_HOST=127.0.0.1
+DB_NAME=my_plainasia
+DB_USER=
+DB_PASS=
+```
+e impostare le credenziali per il database (si trovano su Altervista nella sezione "Gestisci Database").
