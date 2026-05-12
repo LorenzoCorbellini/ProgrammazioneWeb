@@ -1,19 +1,29 @@
 /* --- PALETTE ELEGANTE E LEGGIBILE --- */
 :root {
-    --bg-main: #fff7f5;          /* Sfondo chiaro caldo */
-    --surface: #ffffff;          /* Card / contenitori */
+    --bg-main: #fff7f5;
+    --surface: #ffffff;
 
-    --primary: #e97b6d;          /* Salmone principale */
-    --primary-dark: #c85f52;     /* Salmone scuro */
-    
-    --accent: #8b4d46;           /* Terracotta elegante */
-    --accent-hover: #b5655c;     /* Hover caldo */
+    --primary: #e97b6d;
+    --primary-dark: #c85f52;
 
-    --text-dark: #1f2937;        /* Grigio molto scuro */
-    --text-light: #fdfdfd;       /* Testo chiaro */
+    --accent: #8b4d46;
+    --accent-hover: #b5655c;
 
-    --border-soft: #e7d6d2;      /* Bordi morbidi */
-    --shadow: rgba(0,0,0,0.08);
+    --text-dark: #1f2937;
+    --text-light: #fdfdfd;
+
+    --border-soft: #e7d6d2;
+    --shadow: rgba(0, 0, 0, 0.08);
+
+    /* --- DIMENSIONI DINAMICHE NAV --- */
+    --nav-width: clamp(140px, 15vw, 260px);
+
+    /* --- TIPOGRAFIA FLUIDA (clamp: min, preferred, max) --- */
+    --fs-h1:     clamp(2rem, 5vw, 4.5rem);      /* era 80px fisso */
+    --fs-nav:    clamp(0.875rem, 1.2vw, 1.125rem); /* era 30px fisso */
+    --fs-body:   clamp(0.9375rem, 1.1vw, 1.125rem); /* era 30px fisso */
+    --fs-input:  clamp(0.875rem, 1vw, 1rem);    /* era 24px fisso */
+    --fs-footer: clamp(0.75rem, 0.9vw, 0.875rem); /* era 20px fisso */
 }
 
 /* --- BASE --- */
@@ -21,6 +31,7 @@ body {
     background-color: var(--bg-main);
     color: var(--text-dark);
     font-family: "Elms Sans", sans-serif;
+    font-size: var(--fs-body);
     margin: 0;
     padding: 0;
     font-weight: 200;
@@ -29,10 +40,10 @@ body {
 /* --- HEADER --- */
 h1 {
     margin: 0;
-    padding: 40px 0;
-    font-size: 80px;
+    padding: clamp(20px, 3vh, 40px) 0;
+    font-size: var(--fs-h1);
     font-weight: 200;
-    letter-spacing: 8px;
+    letter-spacing: clamp(3px, 0.5vw, 8px);
 
     background: var(--primary);
     color: var(--text-light);
@@ -45,15 +56,15 @@ h1 {
 /* --- NAVIGAZIONE --- */
 ol {
     list-style-type: none;
-    font-size: 30px;
+    font-size: var(--fs-nav);
 
     margin: 0;
-    padding: 20px 0;
+    padding: clamp(8px, 1.5vh, 20px) 0;
 
     background-color: var(--primary);
     position: relative;
     float: left;
-    width: 15vw;
+    width: var(--nav-width);
 
     box-shadow: 4px 0 15px var(--shadow);
 }
@@ -64,7 +75,7 @@ li a {
     color: var(--text-light);
 
     text-align: left;
-    padding: 18px 30px;
+    padding: clamp(10px, 1.2vh, 18px) clamp(14px, 1.5vw, 30px);
 
     text-decoration: none;
 
@@ -73,7 +84,7 @@ li a {
 }
 
 li a:hover:not(.active) {
-    background-color: rgba(255,255,255,0.12);
+    background-color: rgba(255, 255, 255, 0.12);
     color: #ffffff;
     border-left: 4px solid #ffd2cb;
 }
@@ -86,13 +97,13 @@ li a:hover:not(.active) {
 }
 
 /* --- CONTENUTO --- */
-#content {   
-    float: left;
+#content {
+    margin-left: calc(var(--nav-width) + clamp(16px, 2vw, 40px));
+    margin-top: clamp(20px, 3vh, 40px);
+    margin-right: clamp(16px, 2vw, 40px);
+    padding: clamp(20px, 2.5vw, 40px);
 
-    margin: 40px 0 0 40px;
-    padding: 40px;
-
-    font-size: 30px;
+    font-size: var(--fs-body);
 
     background-color: var(--surface);
 
@@ -100,17 +111,17 @@ li a:hover:not(.active) {
     border-radius: 20px;
 
     height: 60vh;
-    width: 70vw;
 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 
     overflow-y: auto;
 }
 
 /* --- FORM --- */
-input, button {
-    font-size: 24px;
-    padding: 12px 20px;
+input,
+button {
+    font-size: var(--fs-input);
+    padding: clamp(8px, 0.8vh, 12px) clamp(12px, 1vw, 20px);
 
     border-radius: 10px;
     border: 1px solid #d6c4c0;
@@ -136,7 +147,7 @@ button:hover {
 
     transform: translateY(-2px);
 
-    box-shadow: 0 5px 15px rgba(233,123,109,0.25);
+    box-shadow: 0 5px 15px rgba(233, 123, 109, 0.25);
 }
 
 /* --- ANIMAZIONE --- */
@@ -165,26 +176,132 @@ button:hover {
 
     background-color: var(--primary-dark);
 
-    box-shadow: 0 0 15px rgba(200,95,82,0.35);
+    box-shadow: 0 0 15px rgba(200, 95, 82, 0.35);
 }
 
 /* --- FOOTER --- */
-footer {          
+footer {
     position: fixed;
 
-    font-size: 20px;
+    font-size: var(--fs-footer);
 
     width: 100%;
     bottom: 0;
 
     background: var(--primary);
-    color: rgba(255,255,255,0.9);
+    color: rgba(255, 255, 255, 0.9);
 
     text-align: center;
 
-    padding: 20px 0;
+    padding: clamp(10px, 1.5vh, 20px) 0;
 
     border-top: 1px solid var(--primary-dark);
+}
+
+/* --- FILTRO --- */
+#filtro {
+    float: left;
+    clear: left;
+
+    width: var(--nav-width);
+
+    background-color: var(--surface);
+    border-top: 2px solid var(--border-soft);
+
+    box-shadow: 4px 4px 15px var(--shadow);
+
+    padding: clamp(12px, 1.5vh, 24px) clamp(12px, 1.2vw, 20px);
+
+    box-sizing: border-box;
+}
+
+#filtro h3 {
+    margin: 0 0 clamp(8px, 1vh, 16px) 0;
+    font-size: clamp(0.7rem, 0.9vw, 0.875rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+}
+
+#filtro label {
+    display: block;
+    font-size: clamp(0.7rem, 0.8vw, 0.8125rem);
+    font-weight: 400;
+    color: var(--text-dark);
+    margin-bottom: 4px;
+    margin-top: clamp(8px, 1vh, 14px);
+}
+
+#filtro input[type="text"],
+#filtro input[type="date"],
+#filtro select {
+    width: 100%;
+    font-size: clamp(0.7rem, 0.8vw, 0.8125rem);
+    padding: clamp(6px, 0.7vh, 10px) clamp(8px, 0.8vw, 12px);
+    border-radius: 8px;
+    border: 1px solid var(--border-soft);
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#filtro input[type="text"]:focus,
+#filtro input[type="date"]:focus,
+#filtro select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(233, 123, 109, 0.15);
+}
+
+#filtro input[type="checkbox"] {
+    accent-color: var(--primary);
+    width: 15px;
+    height: 15px;
+    margin-right: 8px;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+#filtro .checkbox-label {
+    display: flex;
+    align-items: center;
+    font-size: clamp(0.7rem, 0.8vw, 0.8125rem);
+    color: var(--text-dark);
+    margin-top: clamp(6px, 0.8vh, 10px);
+    cursor: pointer;
+}
+
+#filtro button {
+    width: 100%;
+    margin-top: clamp(12px, 1.5vh, 20px);
+    font-size: clamp(0.65rem, 0.8vw, 0.8125rem);
+    padding: clamp(8px, 1vh, 12px);
+    border-radius: 8px;
+}
+
+#filtro button.reset {
+    background-color: transparent;
+    color: var(--accent);
+    border: 1px solid var(--border-soft);
+    margin-top: 8px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+#filtro button.reset:hover {
+    background-color: var(--bg-main);
+    border-color: var(--accent);
+    transform: none;
+    box-shadow: none;
+}
+
+/* --- ALLINEAMENTO DATI --- */
+td.numero,
+td.data {
+    text-align: right;
 }
 
 /* --- UTILITY --- */
