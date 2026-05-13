@@ -2,16 +2,12 @@
 :root {
     --bg-main: #fff7f5;
     --surface: #ffffff;
-
     --primary: #e97b6d;
     --primary-dark: #c85f52;
-
     --accent: #8b4d46;
     --accent-hover: #b5655c;
-
     --text-dark: #1f2937;
     --text-light: #fdfdfd;
-
     --border-soft: #e7d6d2;
     --shadow: rgba(0, 0, 0, 0.08);
 
@@ -19,10 +15,10 @@
     --nav-width: clamp(140px, 15vw, 260px);
 
     /* --- TIPOGRAFIA FLUIDA --- */
-    --fs-h1:     clamp(2rem, 5vw, 4.5rem);
-    --fs-nav:    clamp(0.875rem, 1.2vw, 1.125rem);
-    --fs-body:   clamp(0.9375rem, 1.1vw, 1.125rem);
-    --fs-input:  clamp(0.875rem, 1vw, 1rem);
+    --fs-h1: clamp(2rem, 5vw, 4.5rem);
+    --fs-nav: clamp(0.875rem, 1.2vw, 1.125rem);
+    --fs-body: clamp(0.9375rem, 1.1vw, 1.125rem);
+    --fs-input: clamp(0.875rem, 1vw, 1rem);
     --fs-footer: clamp(0.75rem, 0.9vw, 0.875rem);
 }
 
@@ -35,66 +31,40 @@ body {
     font-weight: 200;
     margin: 0;
     padding: 0;
-
-    display: grid;
-    grid-template-columns: var(--nav-width) 1fr;
-    grid-template-rows: auto auto 1fr auto;
-    grid-template-areas:
-        "header  header"
-        "nav     content"
-        "filtro  content"
-        "footer  footer";
-    min-height: 100vh;
 }
 
 /* --- HEADER --- */
-header {
-    grid-area: header;
-}
-
 h1 {
     margin: 0;
     padding: clamp(20px, 3vh, 40px) 0;
     font-size: var(--fs-h1);
     font-weight: 200;
     letter-spacing: clamp(3px, 0.5vw, 8px);
-
     background: var(--primary);
     color: var(--text-light);
-
     text-align: center;
     border-bottom: 5px solid var(--primary-dark);
     box-shadow: 0 4px 20px var(--shadow);
 }
 
 /* --- NAVIGAZIONE --- */
-nav {
-    grid-area: nav;
-}
-
 ol {
     list-style-type: none;
     font-size: var(--fs-nav);
-
     margin: 0;
     padding: clamp(8px, 1.5vh, 20px) 0;
-
     background-color: var(--primary);
-    width: 100%;
-
+    float: left;
+    width: var(--nav-width);
     box-shadow: 4px 0 15px var(--shadow);
 }
 
 li a {
     display: block;
-
     color: var(--text-light);
-
     text-align: left;
     padding: clamp(10px, 1.2vh, 18px) clamp(14px, 1.5vw, 30px);
-
     text-decoration: none;
-
     transition: all 0.3s ease;
     border-left: 4px solid transparent;
 }
@@ -112,118 +82,15 @@ li a:hover:not(.active) {
     border-left: 4px solid var(--accent);
 }
 
-/* --- CONTENUTO --- */
-#content {
-    grid-area: content;
-    align-self: start;
-
-    margin: clamp(20px, 3vh, 40px) clamp(16px, 2vw, 40px);
-    padding: clamp(20px, 2.5vw, 40px);
-
-    font-size: var(--fs-body);
-
-    background-color: var(--surface);
-
-    border: 1px solid var(--border-soft);
-    border-radius: 20px;
-
-    min-height: 60vh;
-
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-
-    overflow-y: auto;
-}
-
-/* --- FORM --- */
-input,
-button {
-    font-size: var(--fs-input);
-    padding: clamp(8px, 0.8vh, 12px) clamp(12px, 1vw, 20px);
-
-    border-radius: 10px;
-    border: 1px solid #d6c4c0;
-}
-
-/* --- BOTTONI --- */
-button {
-    background-color: var(--primary);
-    color: var(--text-light);
-
-    border: none;
-
-    text-transform: uppercase;
-    font-weight: bold;
-    letter-spacing: 1px;
-
-    cursor: pointer;
-    transition: 0.3s;
-}
-
-button:hover {
-    background-color: var(--primary-dark);
-
-    transform: translateY(-2px);
-
-    box-shadow: 0 5px 15px rgba(233, 123, 109, 0.25);
-}
-
-/* --- ANIMAZIONE --- */
-#container {
-    margin-top: 20px;
-
-    width: 90%;
-    height: 300px;
-
-    background: #fffdfc;
-
-    border: 1px solid var(--border-soft);
-    border-radius: 15px;
-
-    position: relative;
-    overflow: hidden;
-}
-
-#animate {
-    width: 40px;
-    height: 40px;
-
-    border-radius: 50%;
-
-    position: absolute;
-
-    background-color: var(--primary-dark);
-
-    box-shadow: 0 0 15px rgba(200, 95, 82, 0.35);
-}
-
-/* --- FOOTER --- */
-footer {
-    grid-area: footer;
-
-    font-size: var(--fs-footer);
-
-    background: var(--primary);
-    color: rgba(255, 255, 255, 0.9);
-
-    text-align: center;
-
-    padding: clamp(10px, 1.5vh, 20px) 0;
-
-    border-top: 1px solid var(--primary-dark);
-}
-
 /* --- FILTRO --- */
 #filtro {
-    grid-area: filtro;
-    align-self: start;
-
+    float: left;
+    clear: left;
+    width: var(--nav-width);
     background-color: var(--surface);
     border-top: 2px solid var(--border-soft);
-
     box-shadow: 4px 4px 15px var(--shadow);
-
     padding: clamp(12px, 1.5vh, 24px) clamp(12px, 1.2vw, 20px);
-
     box-sizing: border-box;
 }
 
@@ -308,6 +175,82 @@ footer {
     border-color: var(--accent);
     transform: none;
     box-shadow: none;
+}
+
+/* --- CONTENUTO --- */
+#content {
+    margin-left: calc(var(--nav-width) + clamp(16px, 2vw, 40px));
+    margin-top: clamp(20px, 3vh, 40px);
+    margin-right: clamp(16px, 2vw, 40px);
+    padding: clamp(20px, 2.5vw, 40px);
+    font-size: var(--fs-body);
+    background-color: var(--surface);
+    border: 1px solid var(--border-soft);
+    border-radius: 20px;
+    min-height: 60vh;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    overflow-y: auto;
+}
+
+/* --- FORM --- */
+input,
+button {
+    font-size: var(--fs-input);
+    padding: clamp(8px, 0.8vh, 12px) clamp(12px, 1vw, 20px);
+    border-radius: 10px;
+    border: 1px solid #d6c4c0;
+}
+
+/* --- BOTTONI --- */
+button {
+    background-color: var(--primary);
+    color: var(--text-light);
+    border: none;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(233, 123, 109, 0.25);
+}
+
+/* --- ANIMAZIONE --- */
+#container {
+    margin-top: 20px;
+    width: 90%;
+    height: 300px;
+    background: #fffdfc;
+    border: 1px solid var(--border-soft);
+    border-radius: 15px;
+    position: relative;
+    overflow: hidden;
+}
+
+#animate {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    position: absolute;
+    background-color: var(--primary-dark);
+    box-shadow: 0 0 15px rgba(200, 95, 82, 0.35);
+}
+
+/* --- FOOTER --- */
+footer {
+    position: fixed;
+    font-size: var(--fs-footer);
+    width: 100%;
+    bottom: 0;
+    background: var(--primary);
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    padding: clamp(4px, 0.6vh, 8px) 0;
+    border-top: 1px solid var(--primary-dark);
 }
 
 /* --- ALLINEAMENTO DATI --- */

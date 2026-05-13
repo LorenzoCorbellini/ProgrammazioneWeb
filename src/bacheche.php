@@ -1,3 +1,8 @@
+<?php
+require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/functions.php';
+?>
+
 <!DOCTYPE html>
 <html>
 
@@ -25,78 +30,50 @@
 
 	<div id="content">
 		<?php
-		require_once __DIR__ . '/config/db.php';
-
-		//DA METTERE IN JS
-		function isData(string $val): bool
-		{
-			return (bool) preg_match('/^\d{4}-\d{2}-\d{2}/', $val);
-		}
-
-		function stampaTabella(array $righe): void
-		{
-			if (empty($righe)) {
-				echo "<p>Nessun risultato trovato.</p>";
-				return;
-			}
-			echo "<table border='1'><tr>";
-			foreach (array_keys($righe[0]) as $colonna) {
-				echo "<th>" . htmlspecialchars($colonna) . "</th>";
-			}
-			echo "</tr>";
-			foreach ($righe as $riga) {
-				echo "<tr>";
-				foreach ($riga as $valore) {
-					$val = (string) $valore;
-					if (is_numeric($val))  echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
-					elseif (isData($val))  echo "<td class='data'>"   . htmlspecialchars($val) . "</td>";
-					else                   echo "<td>"                 . htmlspecialchars($val) . "</td>";
-				}
-				echo "</tr>";
-			}
-			echo "</table>";
-		}
 
 		// --- VISTA DETTAGLIO UTENTI ---
-		if (!empty($_GET['vista']) && $_GET['vista'] === 'utenti' && !empty($_GET['bacheca'])) {
+		if (!empty($_GET['vista']) && $_GET['vista'] === 'utenti' && !empty($_GET['bacheca']) && !empty($_GET['owner'])) {
 			$bacheca = $_GET['bacheca'];
+			$owner   = $_GET['owner'];
 			echo "<p><a href='bacheche.php'>&larr; Torna alle bacheche</a></p>";
 			echo "<h2>Utenti autorizzati &mdash; " . htmlspecialchars($bacheca) . "</h2>";
 
 			$stmt = $pdo->prepare("
-                SELECT
-                    u.nickname        AS 'Nickname',
-                    u.nome            AS 'Nome',
-                    u.cognome         AS 'Cognome',
-                    u.dataNascita     AS 'Data Nascita'
-                FROM UtenteAutorizzatoBacheca ub
-                    JOIN Utente u ON u.codice = ub.utenteAutorizzato
-                WHERE ub.nomeBacheca = :bacheca
-            ");
-			$stmt->execute([':bacheca' => $bacheca]);
+				SELECT
+					u.nickname    AS 'Nickname',
+					u.nome        AS 'Nome',
+					u.cognome     AS 'Cognome',
+					u.dataNascita AS 'Data Nascita'
+				FROM UtenteAutorizzatoBacheca uab
+					JOIN Utente u ON u.codice = uab.utenteAutorizzato
+				WHERE uab.nomeBacheca = :bacheca
+				  AND uab.codUtente   = :owner
+			");
+			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
 			stampaTabella($stmt->fetchAll(PDO::FETCH_ASSOC));
 
-			// --- VISTA DETTAGLIO FILE ---
-		} elseif (!empty($_GET['vista']) && $_GET['vista'] === 'file' && !empty($_GET['bacheca'])) {
+		// --- VISTA DETTAGLIO FILE ---
+		} elseif (!empty($_GET['vista']) && $_GET['vista'] === 'file' && !empty($_GET['bacheca']) && !empty($_GET['owner'])) {
 			$bacheca = $_GET['bacheca'];
+			$owner   = $_GET['owner'];
 			echo "<p><a href='bacheche.php'>&larr; Torna alle bacheche</a></p>";
 			echo "<h2>File pubblicati &mdash; " . htmlspecialchars($bacheca) . "</h2>";
 
 			$stmt = $pdo->prepare("
-                SELECT
-                    fm.titolo         AS 'Titolo',
-                    fm.dimensione     AS 'Dimensione(MB)',
-                    fm.URL            AS 'URL',
-                    fm.tipo           AS 'Tipo'
-                FROM FilePubblicatoBacheca fb
-                    JOIN FileMultimediale fm
-                        ON fm.numero    = fb.file
-                WHERE fb.nomeBacheca = :bacheca
-            ");
-			$stmt->execute([':bacheca' => $bacheca]);
+				SELECT
+					fm.titolo        AS 'Titolo',
+					fm.dimensione    AS 'Dimensione(MB)',
+					fm.URL           AS 'URL',
+					fm.tipo          AS 'Tipo'
+				FROM FilePubblicatoBacheca fb
+					JOIN FileMultimediale fm ON fm.numero = fb.file
+				WHERE fb.nomeBacheca = :bacheca
+				  AND fb.codUtente   = :owner
+			");
+			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
 			stampaTabella($stmt->fetchAll(PDO::FETCH_ASSOC));
 
-			// --- VISTA PRINCIPALE ---
+		// --- VISTA PRINCIPALE ---
 		} else {
 			$where  = [];
 			$params = [];
@@ -118,19 +95,23 @@
 			}
 
 			$sql = "
-                SELECT
-                    b.nome                             AS 'Nome Bacheca',
-                    b.dataCreazione                    AS 'Data Creazione',
-                    COUNT(DISTINCT u.utenteAutorizzato) AS 'Numero Utenti',
-                    COUNT(DISTINCT f.file)             AS 'Numero File'
-                FROM Bacheca b
-                    LEFT JOIN UtenteAutorizzatoBacheca u
-                        ON u.codUtente = b.codiceUtente AND u.nomeBacheca = b.nome
-                    LEFT JOIN FilePubblicatoBacheca f
-                        ON f.codUtente = b.codiceUtente AND f.nomeBacheca = b.nome
-            ";
+				SELECT
+					b.codiceUtente                        AS 'owner',
+					u.nickname                            AS 'Proprietario',
+					b.nome                                AS 'Nome Bacheca',
+					b.dataCreazione                       AS 'Data Creazione',
+					COUNT(DISTINCT uab.utenteAutorizzato) AS 'Numero Utenti',
+					COUNT(DISTINCT f.file)                AS 'Numero File'
+				FROM Bacheca b
+					LEFT JOIN UtenteAutorizzatoBacheca uab
+						ON uab.codUtente = b.codiceUtente AND uab.nomeBacheca = b.nome
+					LEFT JOIN FilePubblicatoBacheca f
+						ON f.codUtente = b.codiceUtente AND f.nomeBacheca = b.nome
+					LEFT JOIN Utente u
+						ON u.codice = b.codiceUtente
+			";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-			$sql .= " GROUP BY b.codiceUtente, b.nome, b.dataCreazione";
+			$sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione";
 
 			$stmt = $pdo->prepare($sql);
 			$stmt->execute($params);
@@ -141,18 +122,22 @@
 			} else {
 				echo "<table border='1'><tr>";
 				foreach (array_keys($righe[0]) as $colonna) {
+					if ($colonna === 'owner') continue;
 					echo "<th>" . htmlspecialchars($colonna) . "</th>";
 				}
 				echo "</tr>";
 				foreach ($righe as $riga) {
 					echo "<tr>";
-					$nb = urlencode($riga['Nome Bacheca']);
+					$nb    = urlencode($riga['Nome Bacheca']);
+					$owner = urlencode($riga['owner']);
 					foreach ($riga as $colonna => $valore) {
 						$val = (string) $valore;
-						if ($colonna === 'Numero Utenti') {
-							echo "<td class='numero'><a href='bacheche.php?vista=utenti&bacheca=$nb'>" . htmlspecialchars($val) . "</a></td>";
+						if ($colonna === 'owner') {
+							continue;
+						} elseif ($colonna === 'Numero Utenti') {
+							echo "<td class='numero'><a href='bacheche.php?vista=utenti&bacheca=$nb&owner=$owner'>" . htmlspecialchars($val) . "</a></td>";
 						} elseif ($colonna === 'Numero File') {
-							echo "<td class='numero'><a href='bacheche.php?vista=file&bacheca=$nb'>" . htmlspecialchars($val) . "</a></td>";
+							echo "<td class='numero'><a href='bacheche.php?vista=file&bacheca=$nb&owner=$owner'>" . htmlspecialchars($val) . "</a></td>";
 						} elseif (is_numeric($val)) {
 							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
 						} elseif (isData($val)) {
@@ -170,6 +155,7 @@
 	</div>
 
 	<?php include 'footer.html'; ?>
+
 </body>
 
 </html>
