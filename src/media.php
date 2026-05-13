@@ -87,7 +87,7 @@ require_once __DIR__ . '/functions.php';
 			// 			ON u.codice = b.codiceUtente
 			// ";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-			$sql .= " GROUP BY fmd.caricatoDa, fmd.tipo, fmd.dimensione";
+			//$sql .= " GROUP BY fmd.numero, fmd.caricatoDa, fmd.tipo, fmd.dimensione, fmd.titolo, fmd.URL";
 
 			/*
 			 * prepara la query (statement)
