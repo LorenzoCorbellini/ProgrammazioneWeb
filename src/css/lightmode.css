@@ -83,6 +83,15 @@ li a:hover:not(.active) {
 }
 
 /* --- FILTRO --- */
+#filtro,
+#filtro input,
+#filtro select,
+#filtro button,
+#filtro label {
+    font-family: "Elms Sans", sans-serif;
+    font-weight: 200;
+}
+
 #filtro {
     float: left;
     clear: left;
@@ -206,7 +215,6 @@ button {
     background-color: var(--primary);
     color: var(--text-light);
     border: none;
-    text-transform: uppercase;
     font-weight: bold;
     letter-spacing: 1px;
     cursor: pointer;

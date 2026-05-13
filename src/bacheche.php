@@ -22,7 +22,7 @@ require_once __DIR__ . '/functions.php';
 	$filtro_config = [
 		'campi' => [
 			['tipo'  => 'text',  'name' => 'titolo', 'label' => 'Titolo'],
-			['tipo'  => 'date',  'name' => 'data',   'label' => 'Data'],
+			['tipo'  => 'text', 'name' => 'data',   'label' => 'Data (gg/mm/aaaa)'],
 		]
 	];
 	include 'filter.php';
@@ -83,8 +83,11 @@ require_once __DIR__ . '/functions.php';
 				$params[':titolo'] = '%' . $_GET['titolo'] . '%';
 			}
 			if (!empty($_GET['data'])) {
-				$where[]         = "DATE(b.dataCreazione) = :data";
-				$params[':data'] = $_GET['data'];
+				$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
+				if ($dataConvertita) {
+					$where[]         = "DATE(b.dataCreazione) >= :data";
+					$params[':data'] = $dataConvertita->format('Y-m-d');
+				}
 			}
 			if (!empty($_GET['tipo'])) {
 				$where[]         = "b.tipo = :tipo";
