@@ -78,7 +78,7 @@ require_once __DIR__ . '/functions.php';
 			$where  = [];
 			$params = [];
 
-			if (!empty($_GET['titolo'])) {
+			if (!empty($_GET['titolo'])) { // nome della bacheca
 				$where[]           = "b.nome LIKE :titolo";
 				$params[':titolo'] = '%' . $_GET['titolo'] . '%';
 			}
