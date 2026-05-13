@@ -18,12 +18,12 @@
     /* --- DIMENSIONI DINAMICHE NAV --- */
     --nav-width: clamp(140px, 15vw, 260px);
 
-    /* --- TIPOGRAFIA FLUIDA (clamp: min, preferred, max) --- */
-    --fs-h1:     clamp(2rem, 5vw, 4.5rem);      /* era 80px fisso */
-    --fs-nav:    clamp(0.875rem, 1.2vw, 1.125rem); /* era 30px fisso */
-    --fs-body:   clamp(0.9375rem, 1.1vw, 1.125rem); /* era 30px fisso */
-    --fs-input:  clamp(0.875rem, 1vw, 1rem);    /* era 24px fisso */
-    --fs-footer: clamp(0.75rem, 0.9vw, 0.875rem); /* era 20px fisso */
+    /* --- TIPOGRAFIA FLUIDA --- */
+    --fs-h1:     clamp(2rem, 5vw, 4.5rem);
+    --fs-nav:    clamp(0.875rem, 1.2vw, 1.125rem);
+    --fs-body:   clamp(0.9375rem, 1.1vw, 1.125rem);
+    --fs-input:  clamp(0.875rem, 1vw, 1rem);
+    --fs-footer: clamp(0.75rem, 0.9vw, 0.875rem);
 }
 
 /* --- BASE --- */
@@ -32,12 +32,26 @@ body {
     color: var(--text-dark);
     font-family: "Elms Sans", sans-serif;
     font-size: var(--fs-body);
+    font-weight: 200;
     margin: 0;
     padding: 0;
-    font-weight: 200;
+
+    display: grid;
+    grid-template-columns: var(--nav-width) 1fr;
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas:
+        "header  header"
+        "nav     content"
+        "filtro  content"
+        "footer  footer";
+    min-height: 100vh;
 }
 
 /* --- HEADER --- */
+header {
+    grid-area: header;
+}
+
 h1 {
     margin: 0;
     padding: clamp(20px, 3vh, 40px) 0;
@@ -54,6 +68,10 @@ h1 {
 }
 
 /* --- NAVIGAZIONE --- */
+nav {
+    grid-area: nav;
+}
+
 ol {
     list-style-type: none;
     font-size: var(--fs-nav);
@@ -62,9 +80,7 @@ ol {
     padding: clamp(8px, 1.5vh, 20px) 0;
 
     background-color: var(--primary);
-    position: relative;
-    float: left;
-    width: var(--nav-width);
+    width: 100%;
 
     box-shadow: 4px 0 15px var(--shadow);
 }
@@ -98,9 +114,10 @@ li a:hover:not(.active) {
 
 /* --- CONTENUTO --- */
 #content {
-    margin-left: calc(var(--nav-width) + clamp(16px, 2vw, 40px));
-    margin-top: clamp(20px, 3vh, 40px);
-    margin-right: clamp(16px, 2vw, 40px);
+    grid-area: content;
+    align-self: start;
+
+    margin: clamp(20px, 3vh, 40px) clamp(16px, 2vw, 40px);
     padding: clamp(20px, 2.5vw, 40px);
 
     font-size: var(--fs-body);
@@ -110,7 +127,7 @@ li a:hover:not(.active) {
     border: 1px solid var(--border-soft);
     border-radius: 20px;
 
-    height: 60vh;
+    min-height: 60vh;
 
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
 
@@ -181,12 +198,9 @@ button:hover {
 
 /* --- FOOTER --- */
 footer {
-    position: fixed;
+    grid-area: footer;
 
     font-size: var(--fs-footer);
-
-    width: 100%;
-    bottom: 0;
 
     background: var(--primary);
     color: rgba(255, 255, 255, 0.9);
@@ -200,10 +214,8 @@ footer {
 
 /* --- FILTRO --- */
 #filtro {
-    float: left;
-    clear: left;
-
-    width: var(--nav-width);
+    grid-area: filtro;
+    align-self: start;
 
     background-color: var(--surface);
     border-top: 2px solid var(--border-soft);
