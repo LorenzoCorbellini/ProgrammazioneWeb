@@ -2,14 +2,8 @@
 <html>
 
 <head>
-	<meta charset="utf-8">
+	<?php include 'head.html'; ?>
 	<title>SalMeet</title>
-	<link rel="stylesheet" href="./css/lightmode.css">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Elms+Sans:wght@700&display=swap" rel="stylesheet">
-	<link rel="icon" type="image/x-icon" href="/images/favicon.png">
-	<script type="text/javascript" src="./js/jquery-2.0.0.js"></script>
 </head>
 
 <body>

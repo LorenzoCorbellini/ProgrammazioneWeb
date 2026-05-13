@@ -3,12 +3,7 @@
 
 <head>
 	<title>SalMeet</title>
-
-	<link rel="stylesheet" href="./css/lightmode.css">
-	<link rel="preconnect" href="https://fonts.googleapis.com">
-	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-	<link href="https://fonts.googleapis.com/css2?family=Elms+Sans:wght@700&display=swap" rel="stylesheet">
-	<link rel="icon" type="image/x-icon" href="/images/favicon.png">
+	<?php include 'head.html'; ?>
 </head>
 
 <body>
