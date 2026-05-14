@@ -241,24 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
             echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
 
-            // --- Dati proprietario ---
-            echo "<h3>Proprietario</h3>";
-            $stmt = $pdo->prepare("
-                SELECT
-                    u.codice    AS 'Codice',
-                    u.nickname    AS 'Nickname',
-                    u.nome        AS 'Nome',
-                    u.cognome     AS 'Cognome',
-                    u.dataNascita AS 'Data Nascita'
-                FROM Utente u
-                WHERE u.codice = :owner
-            ");
-            $stmt->execute([':owner' => $owner]);
-            stampaTabella($stmt->fetchAll(PDO::FETCH_ASSOC));
-
             // --- Utenti autorizzati ---
-            echo "<h3>Utenti autorizzati</h3>";
-
             $stmt = $pdo->prepare("
                 SELECT
                     u.codice    AS 'Codice',
@@ -273,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
             $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
+			echo "<h3>Utenti autorizzati: <strong>" . count($utenti) . "</strong></h3>";
             
 			echo "
             <p>
@@ -283,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </p>
             ";
-			
+
             if ($utenti) {
                 echo "<table border='1'><tr>";
                 foreach (array_keys($utenti[0]) as $col) echo "<th>".htmlspecialchars($col)."</th>";
@@ -304,7 +287,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else { echo "<p>Nessun utente autorizzato.</p>"; }
 
             // --- File ---
-            echo "<h3>File pubblicati</h3>";
             $stmt = $pdo->prepare("
                 SELECT
                     u.nickname   AS 'Nickname',
@@ -320,7 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
             $file = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
+            echo "<h3>File pubblicati: <strong>" . count($file) . "</strong></h3>";
             stampaTabella($file);
 
         // =========================================================
