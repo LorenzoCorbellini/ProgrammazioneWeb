@@ -114,3 +114,30 @@ function aggiungiBacheca() {
     })
     .catch(() => alert('Errore di comunicazione con il server.'));
 }
+
+// ---------------------------------------------------------
+// RIMUOVI UTENTE AUTORIZZATO
+// ---------------------------------------------------------
+function rimuoviAutorizzato(nomeBacheca, owner, utenteDaRimuovere) {
+    if (!confirm("Rimuovere l'utente da questa bacheca?")) return;
+
+    fetch('bacheche.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            azione: 'rimuovi_autorizzato',
+            nome: nomeBacheca,
+            owner: owner,
+            utenteDaRimuovere: utenteDaRimuovere
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.successo) {
+            location.reload();
+        } else {
+            alert('Errore: ' + data.messaggio);
+        }
+    })
+    .catch(() => alert('Errore di comunicazione con il server.'));
+}

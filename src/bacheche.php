@@ -51,6 +51,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // ---------------------------------------------------------
+    // RIMUOVI UTENTE AUTORIZZATO (Azione Aggiuntiva)
+    // ---------------------------------------------------------
+    if ($azione === 'rimuovi_autorizzato') {
+        $target = (int) ($input['utenteDaRimuovere'] ?? 0);
+
+        // Se l'utente da rimuovere è il proprietario, blocca l'operazione
+        if ($target === $owner) {
+            echo json_encode(['successo' => false, 'messaggio' => 'Non puoi rimuovere il proprietario della bacheca.']);
+            exit;
+        }
+
+        try {
+            $pdo->prepare("
+                DELETE FROM UtenteAutorizzatoBacheca 
+                WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?
+            ")->execute([$nome, $owner, $target]);
+            echo json_encode(['successo' => true]);
+        } catch (Exception $e) {
+            echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
+        }
+        exit;
+    }
+
     // Verifica che la bacheca esista (per modifica/elimina)
     $check = $pdo->prepare("
         SELECT COUNT(*) FROM Bacheca
@@ -75,7 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Verifica che il nuovo nome non esista già per lo stesso utente
         $checkDup = $pdo->prepare("
             SELECT COUNT(*) FROM Bacheca
             WHERE nome = :nuovoNome AND codiceUtente = :owner
@@ -212,7 +235,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
             $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
-            stampaTabella($utenti);
+            
+            if ($utenti) {
+                echo "<table border='1'><tr>";
+                foreach (array_keys($utenti[0]) as $col) echo "<th>".htmlspecialchars($col)."</th>";
+                echo "<th>Azioni</th></tr>";
+                foreach ($utenti as $u) {
+                    echo "<tr>";
+                    foreach ($u as $v) echo "<td>".htmlspecialchars((string)$v)."</td>";
+                    $bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
+                    echo "<td style='text-align:center;'>";
+                    if ((int)$u['Codice'] !== (int)$owner) {
+                        echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['Codice']})\">";
+                    } else {
+                        echo "<small style='color:gray;'>Proprietario</small>";
+                    }
+                    echo "</td></tr>";
+                }
+                echo "</table>";
+            } else { echo "<p>Nessun utente autorizzato.</p>"; }
 
             // --- File ---
             echo "<h3>File pubblicati</h3>";
@@ -251,6 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $stmt = $pdo->prepare("
                 SELECT
+                    u.codice      AS 'Codice',
                     u.nickname    AS 'Nickname',
                     u.nome        AS 'Nome',
                     u.cognome     AS 'Cognome',
@@ -263,7 +305,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
             $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
-            stampaTabella($utenti);
+            
+            if ($utenti) {
+                echo "<table border='1'><tr>";
+                foreach (array_keys($utenti[0]) as $col) echo "<th>".htmlspecialchars($col)."</th>";
+                echo "<th>Azioni</th></tr>";
+                foreach ($utenti as $u) {
+                    echo "<tr>";
+                    foreach ($u as $v) echo "<td>".htmlspecialchars((string)$v)."</td>";
+                    $bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
+                    echo "<td style='text-align:center;'>";
+                    if ((int)$u['Codice'] !== (int)$owner) {
+                        echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['Codice']})\">";
+                    } else {
+                        echo "<small style='color:gray;'>Proprietario</small>";
+                    }
+                    echo "</td></tr>";
+                }
+                echo "</table>";
+            } else { echo "<p>Nessun utente autorizzato.</p>"; }
 
         // =========================================================
         // VISTA DETTAGLIO FILE
@@ -322,15 +382,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            if (!empty($_GET['tipo'])) {
-                $where[]         = "b.tipo = :tipo";
-                $params[':tipo'] = $_GET['tipo'];
-            }
-
-            if (isset($_GET['solo_attive'])) {
-                $where[] = "b.attiva = 1";
-            }
-
             // --- Paginazione ---
             $elementiPerPagina = 50;
             $pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
@@ -365,11 +416,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 LEFT JOIN Utente u
                     ON u.codice = b.codiceUtente
             ";
-            // Se si filtra per proprietario serve che u non sia NULL
-            if (!empty($_GET['proprietario'])) {
-                $sql = str_replace('LEFT JOIN Utente u', 'INNER JOIN Utente u', $sql);
-                $sqlCount = str_replace('LEFT JOIN Utente u', 'INNER JOIN Utente u', $sqlCount);
-            }
             if ($where) $sql .= " WHERE " . implode(" AND ", $where);
             $sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione LIMIT :limit OFFSET :offset";
 
