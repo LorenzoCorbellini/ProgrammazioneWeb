@@ -91,7 +91,7 @@ function aggiungiBacheca() {
     const nome = prompt("Inserisci il nome della nuova bacheca:");
     if (nome === null || nome.trim() === "") return;
 
-    const owner = prompt("Inserisci il Codice Utente del proprietario:");
+    const owner = prompt("Inserisci il Codice del proprietario (ogni bacheca è associata ad un codice utente segreto, l'identificativo dell'utente):");
     if (owner === null || owner.trim() === "") return;
 
     fetch('bacheche.php', {
