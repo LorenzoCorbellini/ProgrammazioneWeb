@@ -1,6 +1,106 @@
 <?php
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/functions.php';
+
+// =========================================================
+// GESTIONE AZIONI CRUD (chiamate fetch dal JS)
+// =========================================================
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    header('Content-Type: application/json');
+
+    $input = json_decode(file_get_contents('php://input'), true);
+
+    if (empty($input['azione']) || empty($input['nome']) || empty($input['owner'])) {
+        echo json_encode(['successo' => false, 'messaggio' => 'Parametri mancanti.']);
+        exit;
+    }
+
+    $azione = $input['azione'];
+    $nome   = trim($input['nome']);
+    $owner  = (int) $input['owner'];
+
+    // Verifica che la bacheca esista
+    $check = $pdo->prepare("
+        SELECT COUNT(*) FROM Bacheca
+        WHERE nome = :nome AND codiceUtente = :owner
+    ");
+    $check->execute([':nome' => $nome, ':owner' => $owner]);
+
+    if ($check->fetchColumn() == 0) {
+        echo json_encode(['successo' => false, 'messaggio' => 'Bacheca non trovata nel database.']);
+        exit;
+    }
+
+    // ---------------------------------------------------------
+    // MODIFICA
+    // ---------------------------------------------------------
+    if ($azione === 'modifica') {
+
+        $nuovoNome = trim($input['nuovoNome'] ?? '');
+
+        if ($nuovoNome === '') {
+            echo json_encode(['successo' => false, 'messaggio' => 'Il nuovo nome non può essere vuoto.']);
+            exit;
+        }
+
+        // Verifica che il nuovo nome non esista già per lo stesso utente
+        $checkDup = $pdo->prepare("
+            SELECT COUNT(*) FROM Bacheca
+            WHERE nome = :nuovoNome AND codiceUtente = :owner
+        ");
+        $checkDup->execute([':nuovoNome' => $nuovoNome, ':owner' => $owner]);
+
+        if ($checkDup->fetchColumn() > 0) {
+            echo json_encode(['successo' => false, 'messaggio' => 'Esiste già una bacheca con questo nome per lo stesso utente.']);
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            $pdo->prepare("
+                UPDATE Bacheca
+                SET nome = :nuovoNome
+                WHERE nome = :nome AND codiceUtente = :owner
+            ")->execute([':nuovoNome' => $nuovoNome, ':nome' => $nome, ':owner' => $owner]);
+
+            $pdo->commit();
+            echo json_encode(['successo' => true]);
+
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            echo json_encode(['successo' => false, 'messaggio' => 'Errore durante la modifica: ' . $e->getMessage()]);
+        }
+
+    // ---------------------------------------------------------
+    // ELIMINA
+    // ---------------------------------------------------------
+    } elseif ($azione === 'elimina') {
+
+        try {
+            $pdo->beginTransaction();
+
+            $pdo->prepare("
+                DELETE FROM Bacheca
+                WHERE nome = :nome AND codiceUtente = :owner
+            ")->execute([':nome' => $nome, ':owner' => $owner]);
+
+            $pdo->commit();
+            echo json_encode(['successo' => true]);
+
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            echo json_encode(['successo' => false, 'messaggio' => 'Errore durante la cancellazione: ' . $e->getMessage()]);
+        }
+
+    } else {
+        echo json_encode(['successo' => false, 'messaggio' => 'Azione non riconosciuta.']);
+    }
+
+    $pdo = null;
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -9,6 +109,7 @@ require_once __DIR__ . '/functions.php';
 <head>
 	<?php include 'head.html'; ?>
 	<title>SalMeet</title>
+	<script src="./js/bachecheCRUD.js" defer></script>
 </head>
 
 <body>
@@ -52,7 +153,7 @@ require_once __DIR__ . '/functions.php';
 			echo "<h3>Proprietario</h3>";
 			$stmt = $pdo->prepare("
 				SELECT
-					u.codice	  AS 'Codice',
+					u.codice 	AS 'Codice',
 					u.nickname    AS 'Nickname',
 					u.nome        AS 'Nome',
 					u.cognome     AS 'Cognome',
@@ -67,7 +168,7 @@ require_once __DIR__ . '/functions.php';
 			echo "<h3>Utenti autorizzati</h3>";
 			$stmt = $pdo->prepare("
 				SELECT
-					u.codice	  AS 'Codice',
+					u.codice 	AS 'Codice',
 					u.nickname    AS 'Nickname',
 					u.nome        AS 'Nome',
 					u.cognome     AS 'Cognome',
@@ -82,11 +183,11 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
 			stampaTabella($utenti);
 
-			// --- File pubblicati ---
+			// --- File ---
 			echo "<h3>File pubblicati</h3>";
 			$stmt = $pdo->prepare("
 				SELECT
-					u.nickname AS 'Caricato da',
+					u.nickname   AS 'Nickname',
 					fm.titolo     AS 'Titolo',
 					fm.dimensione AS 'Dimensione(MB)',
 					fm.URL        AS 'URL',
@@ -102,9 +203,9 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
 			stampaTabella($file);
 
-			// =========================================================
-			// VISTA DETTAGLIO UTENTI
-			// =========================================================
+		// =========================================================
+		// VISTA DETTAGLIO UTENTI
+		// =========================================================
 		} elseif (
 			!empty($_GET['vista']) &&
 			$_GET['vista'] === 'utenti' &&
@@ -133,9 +234,9 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
 			stampaTabella($utenti);
 
-			// =========================================================
-			// VISTA DETTAGLIO FILE
-			// =========================================================
+		// =========================================================
+		// VISTA DETTAGLIO FILE
+		// =========================================================
 		} elseif (
 			!empty($_GET['vista']) &&
 			$_GET['vista'] === 'file' &&
@@ -164,9 +265,9 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
 			stampaTabella($file);
 
-			// =========================================================
-			// VISTA PRINCIPALE
-			// =========================================================
+		// =========================================================
+		// VISTA PRINCIPALE
+		// =========================================================
 		} else {
 
 			$where  = [];
@@ -188,6 +289,15 @@ require_once __DIR__ . '/functions.php';
 					$where[]         = "DATE(b.dataCreazione) >= :data";
 					$params[':data'] = $dataConvertita->format('Y-m-d');
 				}
+			}
+
+			if (!empty($_GET['tipo'])) {
+				$where[]         = "b.tipo = :tipo";
+				$params[':tipo'] = $_GET['tipo'];
+			}
+
+			if (isset($_GET['solo_attive'])) {
+				$where[] = "b.attiva = 1";
 			}
 
 			// --- Paginazione ---
@@ -241,7 +351,7 @@ require_once __DIR__ . '/functions.php';
 			$stmt->execute();
 			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche ($elementiPerPagina per pagina).</p>";
+			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche.</p>";
 
 			if (empty($righe)) {
 				echo "<p>Nessuna bacheca trovata.</p>";
@@ -251,6 +361,7 @@ require_once __DIR__ . '/functions.php';
 					if ($colonna === 'owner') continue;
 					echo "<th>" . htmlspecialchars($colonna) . "</th>";
 				}
+				echo "<th>Azioni</th>";
 				echo "</tr>";
 
 				foreach ($righe as $riga) {
@@ -262,6 +373,7 @@ require_once __DIR__ . '/functions.php';
 
 						if ($colonna === 'owner') {
 							continue;
+
 						} elseif ($colonna === 'Nome Bacheca') {
 							$p = $queryCorrente;
 							$p['vista']   = 'dettaglio';
@@ -269,6 +381,7 @@ require_once __DIR__ . '/functions.php';
 							$p['owner']   = $riga['owner'];
 							$url = 'bacheche.php?' . http_build_query($p);
 							echo "<td><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
+
 						} elseif ($colonna === 'Numero Utenti') {
 							$p = $queryCorrente;
 							$p['vista']   = 'utenti';
@@ -276,6 +389,7 @@ require_once __DIR__ . '/functions.php';
 							$p['owner']   = $riga['owner'];
 							$url = 'bacheche.php?' . http_build_query($p);
 							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
+
 						} elseif ($colonna === 'Numero File') {
 							$p = $queryCorrente;
 							$p['vista']   = 'file';
@@ -283,14 +397,32 @@ require_once __DIR__ . '/functions.php';
 							$p['owner']   = $riga['owner'];
 							$url = 'bacheche.php?' . http_build_query($p);
 							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
+
 						} elseif (is_numeric($val)) {
 							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
+
 						} elseif (isData($val)) {
 							echo "<td class='data'>" . formattaData($val) . "</td>";
+
 						} else {
 							echo "<td>" . htmlspecialchars($val) . "</td>";
 						}
 					}
+					// --- Icone azioni ---
+					$nomeEnc  = htmlspecialchars(addslashes($riga['Nome Bacheca']), ENT_QUOTES);
+					$ownerEnc = (int) $riga['owner'];
+					echo "
+					<td style='text-align:center; white-space:nowrap;'>
+						<span title='Modifica' style='cursor:pointer; font-size:1.1rem; margin-right:8px;'
+								onclick=\"modificaBacheca('{$nomeEnc}', {$ownerEnc})\">
+								<img src='images/edit.png' alt='Modifica' style='width:16px; height:16px;'>
+							</span>
+							<span title='Elimina' style='cursor:pointer; font-size:1.1rem;'
+								onclick=\"eliminaBacheca('{$nomeEnc}', {$ownerEnc})\">
+							<img src='images/trash.png' alt='Elimina' style='width:16px; height:16px;'>
+						</span>
+					</td>
+					";
 					echo "</tr>";
 				}
 				echo "</table>";
@@ -314,11 +446,8 @@ require_once __DIR__ . '/functions.php';
 				echo "</div>";
 			}
 		}
-
 		?>
 	</div>
-
-	<?php $pdo = null; ?>
 
 	<?php include 'footer.html'; ?>
 
