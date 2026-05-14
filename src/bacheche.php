@@ -3,7 +3,7 @@ require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/functions.php';
 
 // =========================================================
-// GESTIONE AZIONI CRUD (chiamate fetch dal JS)
+// CRUD
 // =========================================================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$owner  = (int) $input['owner'];
 
 	// ---------------------------------------------------------
-	// AGGIUNGI (Nuova bacheca)
+	// AGGIUNGI BACHECA
 	// ---------------------------------------------------------
 	if ($azione === 'aggiungi') {
 		// Verifica esistenza utente
@@ -46,11 +46,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			$dataOggi = date('Y-m-d');
 
-			// 1. Inserimento nella tabella Bacheca
+			// Inserimento nella tabella Bacheca
 			$stmt1 = $pdo->prepare("INSERT INTO Bacheca (nome, codiceUtente, dataCreazione) VALUES (?, ?, ?)");
 			$stmt1->execute([$nome, $owner, $dataOggi]);
 
-			// 2. Inserimento nella tabella UtenteAutorizzatoBacheca (il proprietario è il primo autorizzato)
+			// Inserimento nella tabella UtenteAutorizzatoBacheca (il proprietario è il primo autorizzato)
 			$stmt2 = $pdo->prepare("INSERT INTO UtenteAutorizzatoBacheca (nomeBacheca, codUtente, utenteAutorizzato) VALUES (?, ?, ?)");
 			$stmt2->execute([$nome, $owner, $owner]);
 
@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
-			// In caso di errore (es: nomi duplicati o problemi DB), annulla tutto
+			// In caso di errore annulla tutto
 			if ($pdo->inTransaction()) {
 				$pdo->rollBack();
 			}
@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	}
 
 	// ---------------------------------------------------------
-	// AGGIUNGI FILE (Nuova logica)
+	// AGGIUNGI FILE
 	// ---------------------------------------------------------
 	if ($azione === 'aggiungi_file') {
 		$nuovoFile = (int) ($input['nuovoFile'] ?? 0);
@@ -140,11 +140,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			exit;
 		}
 
-		// Verifica esistenza file
-		$st = $pdo->prepare("SELECT COUNT(*) FROM FileMultimediale WHERE numero = ?");
-		$st->execute([$nuovoFile]);
-		if ($st->fetchColumn() == 0) {
+		// Recuperiamo chi ha caricato il file
+		$stFile = $pdo->prepare("SELECT caricatoDa FROM FileMultimediale WHERE numero = ?");
+		$stFile->execute([$nuovoFile]);
+		$fileData = $stFile->fetch(PDO::FETCH_ASSOC);
+
+		if (!$fileData) {
 			echo json_encode(['successo' => false, 'messaggio' => 'Il file non esiste nel database.']);
+			exit;
+		}
+
+		$creatoreFile = (int) $fileData['caricatoDa'];
+
+		// Verifichiamo se il creatore del file è autorizzato per questa bacheca
+		$stAuth = $pdo->prepare("
+			SELECT COUNT(*) 
+			FROM UtenteAutorizzatoBacheca 
+			WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?
+		");
+		$stAuth->execute([$nome, $owner, $creatoreFile]);
+
+		if ($stAuth->fetchColumn() == 0) {
+			echo json_encode([
+				'successo' => false, 
+				'messaggio' => 'Azione negata: l\'utente che ha creato questo file non è autorizzato per questa bacheca.'
+			]);
 			exit;
 		}
 
@@ -167,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	}
 
 	// ---------------------------------------------------------
-	// RIMUOVI FILE (Nuova logica)
+	// RIMUOVI FILE
 	// ---------------------------------------------------------
 	if ($azione === 'rimuovi_file') {
 		$targetFile = (int) ($input['fileDaRimuovere'] ?? 0);
@@ -554,12 +574,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
-			// --- Paginazione ---
+			// Paginazione
 			$elementiPerPagina = 50;
 			$pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
 			$offset = ($pagina - 1) * $elementiPerPagina;
 
-			// --- Conteggio ---
+			// Conteggio 
 			$sqlCount = "
                 SELECT COUNT(*) AS totale
                 FROM Bacheca b
@@ -571,7 +591,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$totaleRisultati = $stmtCount->fetch(PDO::FETCH_ASSOC)['totale'];
 			$totalePagine    = ceil($totaleRisultati / $elementiPerPagina);
 
-			// --- Query principale ---
+			// Query principale 
 			$sql = "
                 SELECT
                     b.codiceUtente                        AS 'owner',
@@ -660,7 +680,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 							echo "<td>" . htmlspecialchars($val) . "</td>";
 						}
 					}
-					// --- Icone azioni ---
+					
 					$nomeEnc  = htmlspecialchars(addslashes($riga['Nome Bacheca']), ENT_QUOTES);
 					$ownerEnc = (int) $riga['owner'];
 					echo "
@@ -679,7 +699,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 				echo "</table>";
 
-				// --- Navigazione pagine ---
+				// Navigazione pagine 
 				echo "<div style='margin-top:20px;'>";
 				$queryParams = $_GET;
 
