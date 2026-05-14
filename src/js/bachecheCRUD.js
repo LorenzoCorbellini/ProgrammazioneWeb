@@ -83,3 +83,34 @@ function eliminaBacheca(nome, owner) {
     })
     .catch(() => alert('Errore di comunicazione con il server.'));
 }
+
+// ---------------------------------------------------------
+// AGGIUNGI NUOVA BACHECA
+// ---------------------------------------------------------
+function aggiungiBacheca() {
+    const nome = prompt("Inserisci il nome della nuova bacheca:");
+    if (nome === null || nome.trim() === "") return;
+
+    const owner = prompt("Inserisci il Codice Utente del proprietario:");
+    if (owner === null || owner.trim() === "") return;
+
+    fetch('bacheche.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            azione: 'aggiungi',
+            nome: nome.trim(),
+            owner: owner.trim()
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.successo) {
+            alert('Bacheca creata con successo.');
+            location.reload();
+        } else {
+            alert('Errore: ' + data.messaggio);
+        }
+    })
+    .catch(() => alert('Errore di comunicazione con il server.'));
+}
