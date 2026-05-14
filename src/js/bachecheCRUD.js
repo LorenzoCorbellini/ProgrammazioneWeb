@@ -94,6 +94,11 @@ function aggiungiBacheca() {
     const owner = prompt("Inserisci il Codice del proprietario (ogni bacheca è associata ad un codice utente segreto, l'identificativo dell'utente):");
     if (owner === null || owner.trim() === "") return;
 
+    if (isNaN(owner.trim())) {
+        alert("Errore: Il codice del proprietario deve essere un numero valido.");
+        return;
+    }
+
     fetch('bacheche.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -150,6 +155,11 @@ function aggiungiAutorizzato(nomeBacheca, owner) {
     
     if (codiceUtente === null || codiceUtente.trim() === "") return;
 
+    if (isNaN(codiceUtente.trim())) {
+        alert("Errore: Il codice utente deve essere un numero valido.");
+        return;
+    }
+
     fetch('bacheche.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -179,6 +189,11 @@ function aggiungiFile(nomeBacheca, owner) {
     const idFile = prompt("Inserisci l'ID (numero) del file da pubblicare in questa bacheca:");
     
     if (idFile === null || idFile.trim() === "") return;
+
+    if (isNaN(idFile.trim())) {
+        alert("Errore: L'ID del file deve essere un numero valido.");
+        return;
+    }
 
     fetch('bacheche.php', {
         method: 'POST',

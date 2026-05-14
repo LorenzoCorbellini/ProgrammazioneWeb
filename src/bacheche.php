@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	// AGGIUNGI (Nuova bacheca)
 	// ---------------------------------------------------------
 	if ($azione === 'aggiungi') {
+		// Verifica esistenza utente
 		$st = $pdo->prepare("SELECT COUNT(*) FROM Utente WHERE codice = ?");
 		$st->execute([$owner]);
 		if ($st->fetchColumn() == 0) {
@@ -31,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			exit;
 		}
 
+		// Verifica se esiste già una bacheca con lo stesso nome per questo utente
 		$st = $pdo->prepare("SELECT COUNT(*) FROM Bacheca WHERE nome = ? AND codiceUtente = ?");
 		$st->execute([$nome, $owner]);
 		if ($st->fetchColumn() > 0) {
@@ -39,14 +41,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		try {
+			// Iniziamo una transazione per eseguire due inserimenti "tutto o niente"
+			$pdo->beginTransaction();
+
 			$dataOggi = date('Y-m-d');
 
-			$pdo->prepare("INSERT INTO Bacheca (nome, codiceUtente, dataCreazione) VALUES (?, ?, ?)")
-				->execute([$nome, $owner, $dataOggi]);
+			// 1. Inserimento nella tabella Bacheca
+			$stmt1 = $pdo->prepare("INSERT INTO Bacheca (nome, codiceUtente, dataCreazione) VALUES (?, ?, ?)");
+			$stmt1->execute([$nome, $owner, $dataOggi]);
+
+			// 2. Inserimento nella tabella UtenteAutorizzatoBacheca (il proprietario è il primo autorizzato)
+			$stmt2 = $pdo->prepare("INSERT INTO UtenteAutorizzatoBacheca (nomeBacheca, codUtente, utenteAutorizzato) VALUES (?, ?, ?)");
+			$stmt2->execute([$nome, $owner, $owner]);
+
+			// Confermiamo le modifiche nel database
+			$pdo->commit();
 
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
-			echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
+			// In caso di errore (es: nomi duplicati o problemi DB), annulla tutto
+			if ($pdo->inTransaction()) {
+				$pdo->rollBack();
+			}
+			echo json_encode(['successo' => false, 'messaggio' => 'Errore durante la creazione: ' . $e->getMessage()]);
 		}
 		exit;
 	}
