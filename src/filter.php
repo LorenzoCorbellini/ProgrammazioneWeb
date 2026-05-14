@@ -60,7 +60,7 @@ $action = htmlspecialchars($filtro_config['action'] ?? $_SERVER['PHP_SELF']);
                        name="<?= $name ?>"
                        id="<?= $name ?>"
                        value="<?= $value ?>"
-                       placeholder="<?= $label ?>">
+                       placeholder="Cerca...">
 
             <?php endif; ?>
 

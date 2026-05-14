@@ -22,8 +22,9 @@ require_once __DIR__ . '/functions.php';
 	<?php
 	$filtro_config = [
 		'campi' => [
-			['tipo' => 'text', 'name' => 'titolo', 'label' => 'Titolo'],
-			['tipo' => 'text', 'name' => 'data', 'label' => 'Data (gg/mm/aaaa)'],
+			['tipo' => 'text', 'name' => 'titolo',      'label' => 'Nome Bacheca'],
+			['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
+			['tipo' => 'text', 'name' => 'data',         'label' => 'Data (gg/mm/aaaa)'],
 		]
 	];
 	include 'filter.php';
@@ -180,6 +181,11 @@ require_once __DIR__ . '/functions.php';
 				$params[':titolo'] = '%' . $_GET['titolo'] . '%';
 			}
 
+			if (!empty($_GET['proprietario'])) {
+				$where[]                 = "u.nickname LIKE :proprietario";
+				$params[':proprietario'] = '%' . $_GET['proprietario'] . '%';
+			}
+
 			if (!empty($_GET['data'])) {
 				$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
 				if ($dataConvertita) {
@@ -203,7 +209,11 @@ require_once __DIR__ . '/functions.php';
 			$offset = ($pagina - 1) * $elementiPerPagina;
 
 			// --- Conteggio ---
-			$sqlCount = "SELECT COUNT(*) AS totale FROM Bacheca b";
+			$sqlCount = "
+				SELECT COUNT(*) AS totale
+				FROM Bacheca b
+				LEFT JOIN Utente u ON u.codice = b.codiceUtente
+			";
 			if ($where) $sqlCount .= " WHERE " . implode(" AND ", $where);
 			$stmtCount = $pdo->prepare($sqlCount);
 			$stmtCount->execute($params);
@@ -227,6 +237,11 @@ require_once __DIR__ . '/functions.php';
 				LEFT JOIN Utente u
 					ON u.codice = b.codiceUtente
 			";
+			// Se si filtra per proprietario serve che u non sia NULL
+			if (!empty($_GET['proprietario'])) {
+				$sql = str_replace('LEFT JOIN Utente u', 'INNER JOIN Utente u', $sql);
+				$sqlCount = str_replace('LEFT JOIN Utente u', 'INNER JOIN Utente u', $sqlCount);
+			}
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
 			$sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione LIMIT :limit OFFSET :offset";
 
