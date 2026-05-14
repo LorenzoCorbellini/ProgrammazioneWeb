@@ -26,55 +26,99 @@ require_once __DIR__ . '/functions.php';
 			['tipo' => 'text', 'name' => 'data', 'label' => 'Data (gg/mm/aaaa)'],
 		]
 	];
-
 	include 'filter.php';
 	?>
 
 	<div id="content">
-
 		<?php
+
+		// Helper per link di ritorno
+		function urlRitorno(): string {
+			$p = $_GET;
+			unset($p['vista'], $p['bacheca'], $p['owner']);
+			$q = http_build_query($p);
+			return 'bacheche.php' . ($q ? "?$q" : '');
+		}
+
+		// =========================================================
+		// VISTA DETTAGLIO BACHECA
+		// =========================================================
+		if (
+			!empty($_GET['vista']) &&
+			$_GET['vista'] === 'dettaglio' &&
+			!empty($_GET['bacheca']) &&
+			!empty($_GET['owner'])
+		) {
+			$bacheca = $_GET['bacheca'];
+			$owner   = $_GET['owner'];
+
+			echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
+			echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
+
+			// --- Dati proprietario ---
+			echo "<h3>Proprietario</h3>";
+			$stmt = $pdo->prepare("
+				SELECT
+					u.nickname    AS 'Nickname',
+					u.nome        AS 'Nome',
+					u.cognome     AS 'Cognome',
+					u.dataNascita AS 'Data Nascita'
+				FROM Utente u
+				WHERE u.codice = :owner
+			");
+			$stmt->execute([':owner' => $owner]);
+			stampaTabella($stmt->fetchAll(PDO::FETCH_ASSOC));
+
+			// --- Utenti autorizzati ---
+			echo "<h3>Utenti autorizzati</h3>";
+			$stmt = $pdo->prepare("
+				SELECT
+					u.nickname    AS 'Nickname',
+					u.nome        AS 'Nome',
+					u.cognome     AS 'Cognome',
+					u.dataNascita AS 'Data Nascita'
+				FROM UtenteAutorizzatoBacheca uab
+				JOIN Utente u ON u.codice = uab.utenteAutorizzato
+				WHERE uab.nomeBacheca = :bacheca
+				  AND uab.codUtente   = :owner
+			");
+			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
+			$utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
+			stampaTabella($utenti);
+
+			// --- File ---
+			echo "<h3>File pubblicati</h3>";
+			$stmt = $pdo->prepare("
+				SELECT
+					fm.titolo     AS 'Titolo',
+					fm.dimensione AS 'Dimensione(MB)',
+					fm.URL        AS 'URL',
+					fm.tipo       AS 'Tipo'
+				FROM FilePubblicatoBacheca fb
+				JOIN FileMultimediale fm ON fm.numero = fb.file
+				WHERE fb.nomeBacheca = :bacheca
+				  AND fb.codUtente   = :owner
+			");
+			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
+			$file = $stmt->fetchAll(PDO::FETCH_ASSOC);
+			echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
+			stampaTabella($file);
 
 		// =========================================================
 		// VISTA DETTAGLIO UTENTI
 		// =========================================================
-		if (
+		} elseif (
 			!empty($_GET['vista']) &&
 			$_GET['vista'] === 'utenti' &&
 			!empty($_GET['bacheca']) &&
 			!empty($_GET['owner'])
 		) {
-
 			$bacheca = $_GET['bacheca'];
 			$owner   = $_GET['owner'];
 
-			// -----------------------------------------------------
-			// LINK RITORNO
-			// -----------------------------------------------------
-
-			$paramsRitorno = $_GET;
-
-			unset($paramsRitorno['vista']);
-			unset($paramsRitorno['bacheca']);
-			unset($paramsRitorno['owner']);
-
-			$urlRitorno =
-				'bacheche.php?' .
-				http_build_query($paramsRitorno);
-
-			echo "
-			<p>
-				<a href='$urlRitorno'>
-					&larr; Torna alle bacheche
-				</a>
-			</p>
-			";
-
-			echo "
-			<h2>
-				Utenti autorizzati &mdash;
-				" . htmlspecialchars($bacheca) . "
-			</h2>
-			";
+			echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
+			echo "<h2>Utenti autorizzati &mdash; " . htmlspecialchars($bacheca) . "</h2>";
 
 			$stmt = $pdo->prepare("
 				SELECT
@@ -82,30 +126,14 @@ require_once __DIR__ . '/functions.php';
 					u.nome        AS 'Nome',
 					u.cognome     AS 'Cognome',
 					u.dataNascita AS 'Data Nascita'
-
 				FROM UtenteAutorizzatoBacheca uab
-
-				JOIN Utente u
-					ON u.codice = uab.utenteAutorizzato
-
+				JOIN Utente u ON u.codice = uab.utenteAutorizzato
 				WHERE uab.nomeBacheca = :bacheca
-				AND uab.codUtente = :owner
+				  AND uab.codUtente   = :owner
 			");
-
-			$stmt->execute([
-				':bacheca' => $bacheca,
-				':owner'   => $owner
-			]);
-
+			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
 			$utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-			echo "
-			<p>
-				Utenti trovati:
-				<strong>" . count($utenti) . "</strong>
-			</p>
-			";
-
+			echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
 			stampaTabella($utenti);
 
 		// =========================================================
@@ -117,38 +145,11 @@ require_once __DIR__ . '/functions.php';
 			!empty($_GET['bacheca']) &&
 			!empty($_GET['owner'])
 		) {
-
 			$bacheca = $_GET['bacheca'];
 			$owner   = $_GET['owner'];
 
-			// -----------------------------------------------------
-			// LINK RITORNO
-			// -----------------------------------------------------
-
-			$paramsRitorno = $_GET;
-
-			unset($paramsRitorno['vista']);
-			unset($paramsRitorno['bacheca']);
-			unset($paramsRitorno['owner']);
-
-			$urlRitorno =
-				'bacheche.php?' .
-				http_build_query($paramsRitorno);
-
-			echo "
-			<p>
-				<a href='$urlRitorno'>
-					&larr; Torna alle bacheche
-				</a>
-			</p>
-			";
-
-			echo "
-			<h2>
-				File pubblicati &mdash;
-				" . htmlspecialchars($bacheca) . "
-			</h2>
-			";
+			echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
+			echo "<h2>File pubblicati &mdash; " . htmlspecialchars($bacheca) . "</h2>";
 
 			$stmt = $pdo->prepare("
 				SELECT
@@ -156,30 +157,14 @@ require_once __DIR__ . '/functions.php';
 					fm.dimensione AS 'Dimensione(MB)',
 					fm.URL        AS 'URL',
 					fm.tipo       AS 'Tipo'
-
 				FROM FilePubblicatoBacheca fb
-
-				JOIN FileMultimediale fm
-					ON fm.numero = fb.file
-
+				JOIN FileMultimediale fm ON fm.numero = fb.file
 				WHERE fb.nomeBacheca = :bacheca
-				AND fb.codUtente = :owner
+				  AND fb.codUtente   = :owner
 			");
-
-			$stmt->execute([
-				':bacheca' => $bacheca,
-				':owner'   => $owner
-			]);
-
+			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
 			$file = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-			echo "
-			<p>
-				File trovati:
-				<strong>" . count($file) . "</strong>
-			</p>
-			";
-
+			echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
 			stampaTabella($file);
 
 		// =========================================================
@@ -190,94 +175,42 @@ require_once __DIR__ . '/functions.php';
 			$where  = [];
 			$params = [];
 
-			// -----------------------------------------------------
-			// FILTRI
-			// -----------------------------------------------------
-
 			if (!empty($_GET['titolo'])) {
-
-				$where[] = "b.nome LIKE :titolo";
-
-				$params[':titolo'] =
-					'%' . $_GET['titolo'] . '%';
+				$where[]           = "b.nome LIKE :titolo";
+				$params[':titolo'] = '%' . $_GET['titolo'] . '%';
 			}
 
 			if (!empty($_GET['data'])) {
-
-				$dataConvertita =
-					DateTime::createFromFormat(
-						'd/m/Y',
-						$_GET['data']
-					);
-
+				$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
 				if ($dataConvertita) {
-
-					$where[] =
-						"DATE(b.dataCreazione) >= :data";
-
-					$params[':data'] =
-						$dataConvertita->format('Y-m-d');
+					$where[]         = "DATE(b.dataCreazione) >= :data";
+					$params[':data'] = $dataConvertita->format('Y-m-d');
 				}
 			}
 
 			if (!empty($_GET['tipo'])) {
-
-				$where[] = "b.tipo = :tipo";
-
+				$where[]         = "b.tipo = :tipo";
 				$params[':tipo'] = $_GET['tipo'];
 			}
 
 			if (isset($_GET['solo_attive'])) {
-
 				$where[] = "b.attiva = 1";
 			}
 
-			// -----------------------------------------------------
-			// PAGINAZIONE
-			// -----------------------------------------------------
-
+			// --- Paginazione ---
 			$elementiPerPagina = 50;
+			$pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+			$offset = ($pagina - 1) * $elementiPerPagina;
 
-			$pagina = isset($_GET['pagina'])
-				? max(1, (int)$_GET['pagina'])
-				: 1;
-
-			$offset =
-				($pagina - 1) * $elementiPerPagina;
-
-			// -----------------------------------------------------
-			// QUERY CONTEGGIO
-			// -----------------------------------------------------
-
-			$sqlCount = "
-				SELECT COUNT(*) AS totale
-				FROM Bacheca b
-			";
-
-			if ($where) {
-
-				$sqlCount .=
-					" WHERE " . implode(" AND ", $where);
-			}
-
+			// --- Conteggio ---
+			$sqlCount = "SELECT COUNT(*) AS totale FROM Bacheca b";
+			if ($where) $sqlCount .= " WHERE " . implode(" AND ", $where);
 			$stmtCount = $pdo->prepare($sqlCount);
-
 			$stmtCount->execute($params);
+			$totaleRisultati = $stmtCount->fetch(PDO::FETCH_ASSOC)['totale'];
+			$totalePagine    = ceil($totaleRisultati / $elementiPerPagina);
 
-			$totaleRisultati =
-				$stmtCount
-					->fetch(PDO::FETCH_ASSOC)['totale'];
-
-			$totalePagine =
-				ceil(
-					$totaleRisultati /
-					$elementiPerPagina
-				);
-
-			// -----------------------------------------------------
-			// QUERY PRINCIPALE
-			// -----------------------------------------------------
-
+			// --- Query principale ---
 			$sql = "
 				SELECT
 					b.codiceUtente                        AS 'owner',
@@ -286,259 +219,106 @@ require_once __DIR__ . '/functions.php';
 					b.dataCreazione                       AS 'Data Creazione',
 					COUNT(DISTINCT uab.utenteAutorizzato) AS 'Numero Utenti',
 					COUNT(DISTINCT f.file)                AS 'Numero File'
-
 				FROM Bacheca b
-
 				LEFT JOIN UtenteAutorizzatoBacheca uab
-					ON uab.codUtente = b.codiceUtente
-					AND uab.nomeBacheca = b.nome
-
+					ON uab.codUtente = b.codiceUtente AND uab.nomeBacheca = b.nome
 				LEFT JOIN FilePubblicatoBacheca f
-					ON f.codUtente = b.codiceUtente
-					AND f.nomeBacheca = b.nome
-
+					ON f.codUtente = b.codiceUtente AND f.nomeBacheca = b.nome
 				LEFT JOIN Utente u
 					ON u.codice = b.codiceUtente
 			";
-
-			if ($where) {
-
-				$sql .=
-					" WHERE " . implode(" AND ", $where);
-			}
-
-			$sql .= "
-				GROUP BY
-					b.codiceUtente,
-					u.nickname,
-					b.nome,
-					b.dataCreazione
-
-				LIMIT :limit OFFSET :offset
-			";
+			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
+			$sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione LIMIT :limit OFFSET :offset";
 
 			$stmt = $pdo->prepare($sql);
-
 			foreach ($params as $chiave => $valore) {
-
 				$stmt->bindValue($chiave, $valore);
 			}
-
-			$stmt->bindValue(
-				':limit',
-				$elementiPerPagina,
-				PDO::PARAM_INT
-			);
-
-			$stmt->bindValue(
-				':offset',
-				$offset,
-				PDO::PARAM_INT
-			);
-
+			$stmt->bindValue(':limit',  $elementiPerPagina, PDO::PARAM_INT);
+			$stmt->bindValue(':offset', $offset,            PDO::PARAM_INT);
 			$stmt->execute();
+			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			$righe =
-				$stmt->fetchAll(PDO::FETCH_ASSOC);
-
-			// -----------------------------------------------------
-			// NUMERO RISULTATI
-			// -----------------------------------------------------
-
-			echo "
-			<p>
-				Trovate
-				<strong>$totaleRisultati</strong>
-				bacheche.
-			</p>
-			";
-
-			// -----------------------------------------------------
-			// TABELLA
-			// -----------------------------------------------------
+			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche.</p>";
 
 			if (empty($righe)) {
-
 				echo "<p>Nessuna bacheca trovata.</p>";
-
 			} else {
-
-				echo "<table border='1'>";
-
-				echo "<tr>";
-
-				foreach (
-					array_keys($righe[0])
-					as $colonna
-				) {
-
-					if ($colonna === 'owner') {
-						continue;
-					}
-
-					echo "
-					<th>
-						" . htmlspecialchars($colonna) . "
-					</th>
-					";
+				echo "<table border='1'><tr>";
+				foreach (array_keys($righe[0]) as $colonna) {
+					if ($colonna === 'owner') continue;
+					echo "<th>" . htmlspecialchars($colonna) . "</th>";
 				}
-
 				echo "</tr>";
 
 				foreach ($righe as $riga) {
-
 					echo "<tr>";
-
 					$queryCorrente = $_GET;
 
-					foreach (
-						$riga as $colonna => $valore
-					) {
-
+					foreach ($riga as $colonna => $valore) {
 						$val = (string)$valore;
 
 						if ($colonna === 'owner') {
-
 							continue;
 
-						} elseif (
-							$colonna === 'Numero Utenti'
-						) {
+						} elseif ($colonna === 'Nome Bacheca') {
+							$p = $queryCorrente;
+							$p['vista']   = 'dettaglio';
+							$p['bacheca'] = $riga['Nome Bacheca'];
+							$p['owner']   = $riga['owner'];
+							$url = 'bacheche.php?' . http_build_query($p);
+							echo "<td><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
 
-							$paramsUtenti =
-								$queryCorrente;
+						} elseif ($colonna === 'Numero Utenti') {
+							$p = $queryCorrente;
+							$p['vista']   = 'utenti';
+							$p['bacheca'] = $riga['Nome Bacheca'];
+							$p['owner']   = $riga['owner'];
+							$url = 'bacheche.php?' . http_build_query($p);
+							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
 
-							$paramsUtenti['vista'] =
-								'utenti';
-
-							$paramsUtenti['bacheca'] =
-								$riga['Nome Bacheca'];
-
-							$paramsUtenti['owner'] =
-								$riga['owner'];
-
-							$urlUtenti =
-								'bacheche.php?' .
-								http_build_query($paramsUtenti);
-
-							echo "
-							<td class='numero'>
-								<a href='$urlUtenti'>
-									" . htmlspecialchars($val) . "
-								</a>
-							</td>
-							";
-
-						} elseif (
-							$colonna === 'Numero File'
-						) {
-
-							$paramsFile =
-								$queryCorrente;
-
-							$paramsFile['vista'] =
-								'file';
-
-							$paramsFile['bacheca'] =
-								$riga['Nome Bacheca'];
-
-							$paramsFile['owner'] =
-								$riga['owner'];
-
-							$urlFile =
-								'bacheche.php?' .
-								http_build_query($paramsFile);
-
-							echo "
-							<td class='numero'>
-								<a href='$urlFile'>
-									" . htmlspecialchars($val) . "
-								</a>
-							</td>
-							";
+						} elseif ($colonna === 'Numero File') {
+							$p = $queryCorrente;
+							$p['vista']   = 'file';
+							$p['bacheca'] = $riga['Nome Bacheca'];
+							$p['owner']   = $riga['owner'];
+							$url = 'bacheche.php?' . http_build_query($p);
+							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
 
 						} elseif (is_numeric($val)) {
-
-							echo "
-							<td class='numero'>
-								" . htmlspecialchars($val) . "
-							</td>
-							";
+							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
 
 						} elseif (isData($val)) {
-
-							echo "
-							<td class='data'>
-								" . htmlspecialchars($val) . "
-							</td>
-							";
+							echo "<td class='data'>" . formattaData($val) . "</td>";
 
 						} else {
-
-							echo "
-							<td>
-								" . htmlspecialchars($val) . "
-							</td>
-							";
+							echo "<td>" . htmlspecialchars($val) . "</td>";
 						}
 					}
-
 					echo "</tr>";
 				}
-
 				echo "</table>";
+
+				// --- Navigazione pagine ---
+				echo "<div style='margin-top:20px;'>";
+				$queryParams = $_GET;
+
+				if ($pagina > 1) {
+					$queryParams['pagina'] = $pagina - 1;
+					echo "<a href='?" . http_build_query($queryParams) . "'>&larr;</a>";
+				}
+
+				echo "<span style='margin:0 10px;'>Pagina $pagina di $totalePagine</span>";
+
+				if ($pagina < $totalePagine) {
+					$queryParams['pagina'] = $pagina + 1;
+					echo "<a href='?" . http_build_query($queryParams) . "'>&rarr;</a>";
+				}
+
+				echo "</div>";
 			}
-
-			// -----------------------------------------------------
-			// NAVIGAZIONE PAGINE
-			// -----------------------------------------------------
-
-			echo "<div style='margin-top:20px;'>";
-
-			$queryParams = $_GET;
-
-			// pagina precedente
-			if ($pagina > 1) {
-
-				$queryParams['pagina'] =
-					$pagina - 1;
-
-				$urlPrev =
-					'?' . http_build_query($queryParams);
-
-				echo "
-				<a href='$urlPrev'>
-					← 
-				</a>
-				";
-			}
-
-			echo "
-			<span style='margin:0 10px;'>
-				Pagina $pagina di $totalePagine
-			</span>
-			";
-
-			// pagina successiva
-			if ($pagina < $totalePagine) {
-
-				$queryParams['pagina'] =
-					$pagina + 1;
-
-				$urlNext =
-					'?' . http_build_query($queryParams);
-
-				echo "
-				<a href='$urlNext'>
-					 →
-				</a>
-				";
-			}
-
-			echo "</div>";
 		}
 		?>
-
 	</div>
 
 	<?php include 'footer.html'; ?>
