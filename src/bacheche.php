@@ -33,14 +33,6 @@ require_once __DIR__ . '/functions.php';
 	<div id="content">
 		<?php
 
-		// Helper per link di ritorno
-		function urlRitorno(): string {
-			$p = $_GET;
-			unset($p['vista'], $p['bacheca'], $p['owner']);
-			$q = http_build_query($p);
-			return 'bacheche.php' . ($q ? "?$q" : '');
-		}
-
 		// =========================================================
 		// VISTA DETTAGLIO BACHECA
 		// =========================================================
@@ -60,6 +52,7 @@ require_once __DIR__ . '/functions.php';
 			echo "<h3>Proprietario</h3>";
 			$stmt = $pdo->prepare("
 				SELECT
+					u.codice	  AS 'Codice',
 					u.nickname    AS 'Nickname',
 					u.nome        AS 'Nome',
 					u.cognome     AS 'Cognome',
@@ -74,6 +67,7 @@ require_once __DIR__ . '/functions.php';
 			echo "<h3>Utenti autorizzati</h3>";
 			$stmt = $pdo->prepare("
 				SELECT
+					u.codice	  AS 'Codice',
 					u.nickname    AS 'Nickname',
 					u.nome        AS 'Nome',
 					u.cognome     AS 'Cognome',
@@ -88,16 +82,18 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
 			stampaTabella($utenti);
 
-			// --- File ---
+			// --- File pubblicati ---
 			echo "<h3>File pubblicati</h3>";
 			$stmt = $pdo->prepare("
 				SELECT
+					u.nickname AS 'Caricato da',
 					fm.titolo     AS 'Titolo',
 					fm.dimensione AS 'Dimensione(MB)',
 					fm.URL        AS 'URL',
 					fm.tipo       AS 'Tipo'
 				FROM FilePubblicatoBacheca fb
 				JOIN FileMultimediale fm ON fm.numero = fb.file
+				JOIN Utente u ON u.codice = fm.caricatoDa
 				WHERE fb.nomeBacheca = :bacheca
 				  AND fb.codUtente   = :owner
 			");
@@ -106,9 +102,9 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
 			stampaTabella($file);
 
-		// =========================================================
-		// VISTA DETTAGLIO UTENTI
-		// =========================================================
+			// =========================================================
+			// VISTA DETTAGLIO UTENTI
+			// =========================================================
 		} elseif (
 			!empty($_GET['vista']) &&
 			$_GET['vista'] === 'utenti' &&
@@ -137,9 +133,9 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
 			stampaTabella($utenti);
 
-		// =========================================================
-		// VISTA DETTAGLIO FILE
-		// =========================================================
+			// =========================================================
+			// VISTA DETTAGLIO FILE
+			// =========================================================
 		} elseif (
 			!empty($_GET['vista']) &&
 			$_GET['vista'] === 'file' &&
@@ -168,9 +164,9 @@ require_once __DIR__ . '/functions.php';
 			echo "<p>File trovati: <strong>" . count($file) . "</strong></p>";
 			stampaTabella($file);
 
-		// =========================================================
-		// VISTA PRINCIPALE
-		// =========================================================
+			// =========================================================
+			// VISTA PRINCIPALE
+			// =========================================================
 		} else {
 
 			$where  = [];
@@ -192,15 +188,6 @@ require_once __DIR__ . '/functions.php';
 					$where[]         = "DATE(b.dataCreazione) >= :data";
 					$params[':data'] = $dataConvertita->format('Y-m-d');
 				}
-			}
-
-			if (!empty($_GET['tipo'])) {
-				$where[]         = "b.tipo = :tipo";
-				$params[':tipo'] = $_GET['tipo'];
-			}
-
-			if (isset($_GET['solo_attive'])) {
-				$where[] = "b.attiva = 1";
 			}
 
 			// --- Paginazione ---
@@ -254,7 +241,7 @@ require_once __DIR__ . '/functions.php';
 			$stmt->execute();
 			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche.</p>";
+			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche ($elementiPerPagina per pagina).</p>";
 
 			if (empty($righe)) {
 				echo "<p>Nessuna bacheca trovata.</p>";
@@ -275,7 +262,6 @@ require_once __DIR__ . '/functions.php';
 
 						if ($colonna === 'owner') {
 							continue;
-
 						} elseif ($colonna === 'Nome Bacheca') {
 							$p = $queryCorrente;
 							$p['vista']   = 'dettaglio';
@@ -283,7 +269,6 @@ require_once __DIR__ . '/functions.php';
 							$p['owner']   = $riga['owner'];
 							$url = 'bacheche.php?' . http_build_query($p);
 							echo "<td><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
-
 						} elseif ($colonna === 'Numero Utenti') {
 							$p = $queryCorrente;
 							$p['vista']   = 'utenti';
@@ -291,7 +276,6 @@ require_once __DIR__ . '/functions.php';
 							$p['owner']   = $riga['owner'];
 							$url = 'bacheche.php?' . http_build_query($p);
 							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
-
 						} elseif ($colonna === 'Numero File') {
 							$p = $queryCorrente;
 							$p['vista']   = 'file';
@@ -299,13 +283,10 @@ require_once __DIR__ . '/functions.php';
 							$p['owner']   = $riga['owner'];
 							$url = 'bacheche.php?' . http_build_query($p);
 							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
-
 						} elseif (is_numeric($val)) {
 							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
-
 						} elseif (isData($val)) {
 							echo "<td class='data'>" . formattaData($val) . "</td>";
-
 						} else {
 							echo "<td>" . htmlspecialchars($val) . "</td>";
 						}
@@ -333,8 +314,11 @@ require_once __DIR__ . '/functions.php';
 				echo "</div>";
 			}
 		}
+
 		?>
 	</div>
+
+	<?php $pdo = null; ?>
 
 	<?php include 'footer.html'; ?>
 

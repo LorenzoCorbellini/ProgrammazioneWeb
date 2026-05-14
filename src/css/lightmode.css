@@ -11,7 +11,7 @@
     --border-soft: #b3a29f;
     --shadow: rgba(0, 0, 0, 0.08);
 
-    --nav-width: clamp(140px, 15vw, 260px);
+    --nav-width: clamp(160px, 18vw, 300px);
 
     --fs-h1: clamp(2rem, 5vw, 4.5rem);
     --fs-nav: clamp(0.875rem, 1.2vw, 1.125rem);
@@ -67,7 +67,7 @@ li a {
     border-left: 4px solid transparent;
 }
 
-li a:hover:not(.active) {
+li.navbar a:hover:not(.active) {
     background-color: rgba(255, 255, 255, 0.12);
     color: #ffffff;
     border-left: 4px solid #ffd2cb;
@@ -103,7 +103,7 @@ li a:hover:not(.active) {
 
 #filtro h3 {
     margin: 0 0 clamp(8px, 1vh, 16px) 0;
-    font-size: clamp(0.7rem, 0.9vw, 0.875rem);
+    font-size: clamp(0.8rem, 1vw, 1rem);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1.5px;
@@ -112,7 +112,7 @@ li a:hover:not(.active) {
 
 #filtro label {
     display: block;
-    font-size: clamp(0.7rem, 0.8vw, 0.8125rem);
+    font-size: clamp(0.8rem, 0.9vw, 0.9375rem);
     font-weight: 400;
     color: var(--text-dark);
     margin-bottom: 4px;
@@ -124,7 +124,7 @@ li a:hover:not(.active) {
 #filtro input[type="date"],
 #filtro select {
     width: 100%;
-    font-size: clamp(0.7rem, 0.8vw, 0.8125rem);
+    font-size: clamp(0.8rem, 0.9vw, 0.9375rem);
     padding: clamp(6px, 0.7vh, 10px) clamp(8px, 0.8vw, 12px);
     border-radius: 8px;
     border: 1px solid var(--border-soft);
@@ -145,14 +145,14 @@ li a:hover:not(.active) {
     margin-right: 8px;
 }
 
-/* --- BOTTONI --- */
+/* --- BOTTONI FILTRO --- */
 #filtro button {
     width: 90%;
     max-width: 220px;
     display: block;
     margin: 8px auto;
 
-    font-size: var(--fs-input);
+    font-size: clamp(0.8rem, 0.9vw, 0.9375rem);
     padding: clamp(8px, 0.8vh, 12px);
     border-radius: 10px;
     border: 1px solid #d6c4c0;
@@ -172,9 +172,9 @@ li a:hover:not(.active) {
 
 /* --- CONTENUTO --- */
 #content {
-    margin-left: calc(var(--nav-width) + clamp(16px, 2vw, 40px));
+    margin-left: calc(var(--nav-width) + clamp(12px, 1.5vw, 30px));
     margin-top: clamp(20px, 3vh, 40px);
-    margin-right: clamp(16px, 2vw, 40px);
+    margin-right: clamp(12px, 1.5vw, 30px);
     padding: clamp(20px, 2.5vw, 40px);
     font-size: var(--fs-body);
     background-color: var(--surface);
