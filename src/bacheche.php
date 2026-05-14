@@ -52,7 +52,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     // ---------------------------------------------------------
-    // RIMUOVI UTENTE AUTORIZZATO (Azione Aggiuntiva)
+    // AGGIUNGI UTENTE AUTORIZZATO
+    // ---------------------------------------------------------
+    if ($azione === 'aggiungi_autorizzato') {
+        $nuovoUtente = (int) ($input['nuovoUtente'] ?? 0);
+
+        if ($nuovoUtente <= 0) {
+            echo json_encode(['successo' => false, 'messaggio' => 'Codice utente non valido.']);
+            exit;
+        }
+
+        // Verifica che l'utente esista nel database
+        $st = $pdo->prepare("SELECT COUNT(*) FROM Utente WHERE codice = ?");
+        $st->execute([$nuovoUtente]);
+        if ($st->fetchColumn() == 0) {
+            echo json_encode(['successo' => false, 'messaggio' => 'L\'utente con questo codice non esiste.']);
+            exit;
+        }
+
+        // Verifica se l'utente è già autorizzato in questa bacheca
+        $st = $pdo->prepare("SELECT COUNT(*) FROM UtenteAutorizzatoBacheca WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?");
+        $st->execute([$nome, $owner, $nuovoUtente]);
+        if ($st->fetchColumn() > 0) {
+            echo json_encode(['successo' => false, 'messaggio' => 'L\'utente è già autorizzato per questa bacheca.']);
+            exit;
+        }
+
+        try {
+            $pdo->prepare("INSERT INTO UtenteAutorizzatoBacheca (nomeBacheca, codUtente, utenteAutorizzato) VALUES (?, ?, ?)")
+                ->execute([$nome, $owner, $nuovoUtente]);
+            echo json_encode(['successo' => true]);
+        } catch (Exception $e) {
+            echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
+        }
+        exit;
+    }
+
+    // ---------------------------------------------------------
+    // RIMUOVI UTENTE AUTORIZZATO
     // ---------------------------------------------------------
     if ($azione === 'rimuovi_autorizzato') {
         $target = (int) ($input['utenteDaRimuovere'] ?? 0);
@@ -199,6 +236,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) {
             $bacheca = $_GET['bacheca'];
             $owner   = $_GET['owner'];
+            $bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
 
             echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
             echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
@@ -220,6 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // --- Utenti autorizzati ---
             echo "<h3>Utenti autorizzati</h3>";
+
             $stmt = $pdo->prepare("
                 SELECT
                     u.codice    AS 'Codice',
@@ -236,6 +275,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
             
+			echo "
+            <p>
+                <a onclick=\"aggiungiAutorizzato('{$bEnc}', {$owner})\" title='Autorizza utente' style='cursor:pointer;'>
+                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
+                    <strong>Aggiungi utente autorizzato</strong>
+                </a>
+            </p>
+            ";
+			
             if ($utenti) {
                 echo "<table border='1'><tr>";
                 foreach (array_keys($utenti[0]) as $col) echo "<th>".htmlspecialchars($col)."</th>";
@@ -243,7 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($utenti as $u) {
                     echo "<tr>";
                     foreach ($u as $v) echo "<td>".htmlspecialchars((string)$v)."</td>";
-                    $bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
+                    
                     echo "<td style='text-align:center;'>";
                     if ((int)$u['Codice'] !== (int)$owner) {
                         echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['Codice']})\">";
@@ -286,6 +334,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) {
             $bacheca = $_GET['bacheca'];
             $owner   = $_GET['owner'];
+            $bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
 
             echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
             echo "<h2>Utenti autorizzati &mdash; " . htmlspecialchars($bacheca) . "</h2>";
@@ -305,6 +354,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
             $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
             echo "<p>Utenti trovati: <strong>" . count($utenti) . "</strong></p>";
+
+			echo "
+            <p>
+                <a onclick=\"aggiungiAutorizzato('{$bEnc}', {$owner})\" title='Autorizza utente' style='cursor:pointer;'>
+                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
+                    <strong>Aggiungi utente autorizzato</strong>
+                </a>
+            </p>
+            ";
             
             if ($utenti) {
                 echo "<table border='1'><tr>";
@@ -313,7 +371,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 foreach ($utenti as $u) {
                     echo "<tr>";
                     foreach ($u as $v) echo "<td>".htmlspecialchars((string)$v)."</td>";
-                    $bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
+                    
                     echo "<td style='text-align:center;'>";
                     if ((int)$u['Codice'] !== (int)$owner) {
                         echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['Codice']})\">";
