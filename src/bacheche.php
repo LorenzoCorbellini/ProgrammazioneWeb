@@ -595,8 +595,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$sql = "
                 SELECT
                     b.codiceUtente                        AS 'owner',
-                    u.nickname                            AS 'Proprietario',
                     b.nome                                AS 'Nome Bacheca',
+					u.nickname                            AS 'Proprietario',
                     b.dataCreazione                       AS 'Data Creazione',
                     COUNT(DISTINCT uab.utenteAutorizzato) AS 'Numero Utenti',
                     COUNT(DISTINCT f.file)                AS 'Numero File'
