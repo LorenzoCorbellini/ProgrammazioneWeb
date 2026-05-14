@@ -171,3 +171,60 @@ function aggiungiAutorizzato(nomeBacheca, owner) {
     })
     .catch(() => alert('Errore di comunicazione con il server.'));
 }
+
+// ---------------------------------------------------------
+// AGGIUNGI FILE
+// ---------------------------------------------------------
+function aggiungiFile(nomeBacheca, owner) {
+    const idFile = prompt("Inserisci l'ID (numero) del file da pubblicare in questa bacheca:");
+    
+    if (idFile === null || idFile.trim() === "") return;
+
+    fetch('bacheche.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            azione: 'aggiungi_file',
+            nome: nomeBacheca,
+            owner: owner,
+            nuovoFile: idFile.trim()
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.successo) {
+            alert('File aggiunto con successo alla bacheca.');
+            location.reload();
+        } else {
+            alert('Errore: ' + data.messaggio);
+        }
+    })
+    .catch(() => alert('Errore di comunicazione con il server.'));
+}
+
+// ---------------------------------------------------------
+// RIMUOVI FILE
+// ---------------------------------------------------------
+function rimuoviFile(nomeBacheca, owner, fileDaRimuovere) {
+    if (!confirm("Rimuovere questo file dalla bacheca?")) return;
+
+    fetch('bacheche.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            azione: 'rimuovi_file',
+            nome: nomeBacheca,
+            owner: owner,
+            fileDaRimuovere: fileDaRimuovere
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.successo) {
+            location.reload();
+        } else {
+            alert('Errore: ' + data.messaggio);
+        }
+    })
+    .catch(() => alert('Errore di comunicazione con il server.'));
+}
