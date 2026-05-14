@@ -353,6 +353,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche.</p>";
 
+			echo "
+			<p>
+				<a onclick='aggiungiBacheca()' title='Aggiungi Bacheca' style='cursor:pointer;'>
+					<img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
+					<strong>Aggiungi una nuova bacheca</strong>
+				</a>
+			</p>
+			";
+
 			if (empty($righe)) {
 				echo "<p>Nessuna bacheca trovata.</p>";
 			} else {
