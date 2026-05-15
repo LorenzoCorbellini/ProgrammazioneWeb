@@ -639,6 +639,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					if ($colonna === 'owner') continue;
 					echo "<th>" . htmlspecialchars($colonna) . "</th>";
 				}
+
 				echo "<th>Azioni</th>";
 				echo "</tr>";
 
@@ -721,6 +722,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		?>
 	</div>
 
+	<?php  ?>
 	<?php include 'footer.html'; ?>
 
 </body>
