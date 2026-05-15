@@ -15,6 +15,7 @@ jobs:
       run: |
         rm -rf dist
         mkdir dist
+        # Copia il contenuto di src nella cartella dist
         cp -r src/* dist/
 
     - name: 📂 Sync files
@@ -24,3 +25,8 @@ jobs:
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
         local-dir: ./dist/
+        # Specifica la cartella remota. Per Altervista di solito è la root (./) 
+        # o una sottocartella specifica. Mettere ./ aiuta l'azione a mappare i percorsi.
+        server-dir: ./
+        # Questa opzione forza l'upload anche se l'azione ha dubbi sullo stato del server
+        dangerous-clean-slate: false
