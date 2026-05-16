@@ -203,6 +203,10 @@ td.data {
     text-align: right;
 }
 
+td.titolo {
+    text-align: left;
+}
+
 td {
     padding: clamp(8px, 0.8vh, 12px) clamp(12px, 1vw, 20px);
 }

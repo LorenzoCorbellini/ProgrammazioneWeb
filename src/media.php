@@ -60,13 +60,16 @@ require_once __DIR__ . '/functions.php';
 			 */
 			$sql = "
 				SELECT
-					fmd.caricatoDa	AS 'owner',
-					fmd.numero		AS 'file_id',
-					fmd.titolo		AS 'Titolo',
-					fmd.dimensione  AS 'Dimensione',
-					fmd.URL			AS 'URL',
-					fmd.tipo		AS 'Tipo'
-				FROM FileMultimediale fmd
+					fmm.caricatoDa	AS 'owner',
+					fmm.numero		AS 'file_id',
+					fmm.titolo		AS 'title',
+					fmm.dimensione  AS 'size',
+					fmm.URL			AS 'url',
+					fmm.tipo		AS 'type',
+					u.nickname		AS 'nickname'
+				FROM FileMultimediale fmm
+					LEFT JOIN Utente u
+						ON fmm.caricatoDa = u.codice
 			";
 
 			// Tengo la query come esempio (temporaneamente)
@@ -87,7 +90,7 @@ require_once __DIR__ . '/functions.php';
 			// 			ON u.codice = b.codiceUtente
 			// ";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-			//$sql .= " GROUP BY fmd.numero, fmd.caricatoDa, fmd.tipo, fmd.dimensione, fmd.titolo, fmd.URL";
+			//$sql .= " GROUP BY fmm.numero, fmm.caricatoDa, fmm.tipo, fmm.dimensione, fmm.titolo, fmm.URL";
 
 			/*
 			 * prepara la query (statement)
@@ -103,31 +106,42 @@ require_once __DIR__ . '/functions.php';
 			} else {
 				echo "<table border='1'><tr>";
 
+				$mappa_colonne = [
+					'title'     => 'Nome file',
+					'size' 		=> 'Dimensione',
+					'type'      => 'Tipo',
+					'nickname'  => 'Caricato da'
+				];
+				
 				/* Imposta i nomi delle colonne,
 				 * saltando quelle nella blacklist.
 				 * Il parame 'true' di 'in_array(...)' impone strict comparison
 				 */
-				$blacklist = ['owner', 'file_id'];
+				$blacklist = ['file_id', 'url'];
 				foreach (array_keys($righe[0]) as $colonna) {
 					if (in_array($colonna, $blacklist, true)) continue;
-					echo "<th>" . htmlspecialchars($colonna) . "</th>";
+					$titolo_visibile = $mappa_colonne[$colonna] ?? ucfirst($colonna);
+					echo "<th>" . htmlspecialchars($titolo_visibile) . "</th>";
 				}
+
 				echo "</tr>";
+				
 				foreach ($righe as $riga) {
 					echo "<tr>";
-					$titolo = urlencode($riga['Titolo']);
+					$url = urlencode($riga["url"]);
 					$owner = urlencode($riga['owner']);
+
+					
+					// $item as $key => $value
 					foreach ($riga as $colonna => $valore) {
 						$val = (string) $valore;
 						if (in_array($colonna, $blacklist, true)) {
 							continue;
-						// Gli elementi della colonna "Numero Utenti" triggerano una GET per mostrare gli utenti della bacheca
-						} elseif ($colonna === 'Numero Utenti') {
-							echo "<td class='numero'><a href='media.php?vista=utenti&bacheca=$titolo&owner=$owner'>" . htmlspecialchars($val) . "</a></td>";
-						// Gli elementi della colonna "Numero File" triggerano una GET per mostrare i file nella bacheca
-						} elseif ($colonna === 'Numero File') {
-							echo "<td class='numero'><a href='media.php?vista=file&bacheca=$titolo&owner=$owner'>" . htmlspecialchars($val) . "</a></td>";
-						// Gestiamo qualsiasi altro caso in cui vengono mostrati dei valori
+						// Mostra link cliccabile sui nomi dei file
+						} elseif ($colonna === 'title') {
+							echo "<td class='titolo'><a href='" . $url .  "'>" . htmlspecialchars($val) . "</a></td>";
+						} elseif ($colonna === 'nickname') {
+							echo "<td class='titolo'><a href='" . $url .  "'>" . htmlspecialchars($val) . "</a></td>";
 						} elseif (is_numeric($val)) {
 							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
 						} elseif (isData($val)) {
