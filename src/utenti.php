@@ -17,7 +17,33 @@ require_once __DIR__ . '/functions.php';
 ?>
 	<div id="content">     
 		<?php
-			$stmt = $pdo->query("SELECT * FROM utente");
+			// In $where memorizziamo i filtri da aggiungere alla query, scritti in sql
+			// in $params memorizziamo i valori richiesti da filtrare
+			$where = [];
+            $params = [];
+
+            // La GET contiene il codice dell'utente richiesto
+            if (!empty($_GET['utente'])) {
+                $where[] = "codice = :codice";
+                $params[':codice'] = $_GET['utente'];
+            }
+
+			// Salviamo la query in una stringa per poterla modificare dinamicamente
+			$sql = "
+				SELECT * FROM utente
+			";
+			// Se c'è almeno un parametro nella GET, allora aggiungiamo il filtro
+			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
+
+			/* Usiamo queste tre righe per effettuare la query. Questo
+			 approccio ha 2 vantaggi:
+			 1. la query non è suscettibile a sql injection
+			 2. vengono applicati in automatico i parametri specificati sopra
+			*/
+			$stmt = $pdo->prepare($sql);
+			$stmt->execute($params);
+			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
 	echo "<table border='1'>
 			<tr>
 				<th>Nickname</th>
@@ -26,7 +52,7 @@ require_once __DIR__ . '/functions.php';
 				<th>Data nascita</th>
 			</tr>";
 				
-		foreach($stmt as $row){
+		foreach($righe as $row){
 
 		echo "<tr>";
 			echo "<td>".$row['nickname']."</td>";

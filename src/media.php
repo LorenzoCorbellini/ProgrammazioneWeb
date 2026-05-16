@@ -32,6 +32,7 @@ require_once __DIR__ . '/functions.php';
 			$where  = [];
 			$params = [];
 
+			// Filtro per nome del file
 			if (!empty($_GET['filename'])) {
 				$where[]             = "fmm.titolo LIKE :filename";
 				$params[':filename'] = '%' . $_GET['filename'] . '%';
@@ -90,10 +91,7 @@ require_once __DIR__ . '/functions.php';
 				
 				foreach ($righe as $riga) {
 					echo "<tr>";
-					$url = urlencode($riga["url"]);
-					$owner = urlencode($riga['owner']);
-
-					
+	
 					// $item as $key => $value
 					foreach ($riga as $colonna => $valore) {
 						$val = (string) $valore;
@@ -101,9 +99,12 @@ require_once __DIR__ . '/functions.php';
 							continue;
 						// Mostra link cliccabile sui nomi dei file
 						} elseif ($colonna === 'title') {
-							echo "<td class='titolo'><a href='" . $url .  "'>" . htmlspecialchars($val) . "</a></td>";
+							// Rimuove i 3 numeri alla fine del filename
+							$title = preg_replace('/\d{3}$/', '', $riga['title']);
+							echo "<td class='titolo'><a href='" . htmlspecialchars($riga['url']) .  "'>" . htmlspecialchars($title) . "</a></td>";
 						} elseif ($colonna === 'nickname') {
-							echo "<td class='titolo'><a href='" . $url .  "'>" . htmlspecialchars($val) . "</a></td>";
+							$owner_link = "utenti.php?utente=" . urlencode($riga['owner']);
+							echo "<td class='titolo'><a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($val) . "</a></td>";
 						} elseif (is_numeric($val)) {
 							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
 						} elseif (isData($val)) {
