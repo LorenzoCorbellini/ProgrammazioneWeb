@@ -20,8 +20,7 @@ require_once __DIR__ . '/functions.php';
 	<?php 
 	$filtro_config = [
 		'campi' => [
-			['tipo'  => 'text',  'name' => 'filename', 'label' => 'File'],
-			['tipo'  => 'text', 'name' => 'date',   'label' => 'Data (gg/mm/aaaa)'],
+			['tipo'  => 'text',  'name' => 'filename', 'label' => 'File']
 		]
 	];
 	include 'filter.php';
@@ -37,20 +36,6 @@ require_once __DIR__ . '/functions.php';
 				$where[]             = "fmm.titolo LIKE :filename";
 				$params[':filename'] = '%' . $_GET['filename'] . '%';
 			}
-			// if (!empty($_GET['date'])) {
-			// 	$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['date']);
-			// 	if ($dataConvertita) {
-			// 		$where[]         = "DATE(b.dataCreazione) >= :date";
-			// 		$params[':date'] = $dataConvertita->format('Y-m-d');
-			// 	}
-			// }
-			// if (!empty($_GET['tipo'])) {
-			// 	$where[]         = "b.tipo = :tipo";
-			// 	$params[':tipo'] = $_GET['tipo'];
-			// }
-			// if (isset($_GET['solo_attive'])) {
-			// 	$where[] = "b.attiva = 1";
-			// }
 
 		/* VISTA DEI DATI */
 
