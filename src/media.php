@@ -20,8 +20,8 @@ require_once __DIR__ . '/functions.php';
 	<?php 
 	$filtro_config = [
 		'campi' => [
-			['tipo'  => 'text',  'name' => 'titolo', 'label' => 'Titolo'],
-			['tipo'  => 'text', 'name' => 'data',   'label' => 'Data (gg/mm/aaaa)'],
+			['tipo'  => 'text',  'name' => 'filename', 'label' => 'File'],
+			['tipo'  => 'text', 'name' => 'date',   'label' => 'Data (gg/mm/aaaa)'],
 		]
 	];
 	include 'filter.php';
@@ -29,35 +29,31 @@ require_once __DIR__ . '/functions.php';
 	
 	<div id="content">
 		<?php 
-		// --- VISTA PRINCIPALE ---
+		/* FILTRI */
 			$where  = [];
 			$params = [];
 
-			if (!empty($_GET['titolo'])) {
-				$where[]           = "b.nome LIKE :titolo";
-				$params[':titolo'] = '%' . $_GET['titolo'] . '%';
+			if (!empty($_GET['filename'])) {
+				$where[]             = "fmm.titolo LIKE :filename";
+				$params[':filename'] = '%' . $_GET['filename'] . '%';
 			}
-			if (!empty($_GET['data'])) {
-				$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
-				if ($dataConvertita) {
-					$where[]         = "DATE(b.dataCreazione) >= :data";
-					$params[':data'] = $dataConvertita->format('Y-m-d');
-				}
-			}
-			if (!empty($_GET['tipo'])) {
-				$where[]         = "b.tipo = :tipo";
-				$params[':tipo'] = $_GET['tipo'];
-			}
-			if (isset($_GET['solo_attive'])) {
-				$where[] = "b.attiva = 1";
-			}
+			// if (!empty($_GET['date'])) {
+			// 	$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['date']);
+			// 	if ($dataConvertita) {
+			// 		$where[]         = "DATE(b.dataCreazione) >= :date";
+			// 		$params[':date'] = $dataConvertita->format('Y-m-d');
+			// 	}
+			// }
+			// if (!empty($_GET['tipo'])) {
+			// 	$where[]         = "b.tipo = :tipo";
+			// 	$params[':tipo'] = $_GET['tipo'];
+			// }
+			// if (isset($_GET['solo_attive'])) {
+			// 	$where[] = "b.attiva = 1";
+			// }
 
-			/*
-			 * Da aggiungere:
-			 * - bacheche in cui il file è pubblicato
-			 * - utente che ha pubblicato il file
-			 * - url clickabile
-			 */
+		/* VISTA DEI DATI */
+
 			$sql = "
 				SELECT
 					fmm.caricatoDa	AS 'owner',
@@ -71,26 +67,7 @@ require_once __DIR__ . '/functions.php';
 					LEFT JOIN Utente u
 						ON fmm.caricatoDa = u.codice
 			";
-
-			// Tengo la query come esempio (temporaneamente)
-			// $sql = "
-			// 	SELECT
-			// 		b.codiceUtente                        AS 'owner',
-			// 		u.nickname                            AS 'Proprietario',
-			// 		b.nome                                AS 'Nome Bacheca',
-			// 		b.dataCreazione                       AS 'Data Creazione',
-			// 		COUNT(DISTINCT uab.utenteAutorizzato) AS 'Numero Utenti',
-			// 		COUNT(DISTINCT f.file)                AS 'Numero File'
-			// 	FROM Bacheca b
-			// 		LEFT JOIN UtenteAutorizzatoBacheca uab
-			// 			ON uab.codUtente = b.codiceUtente AND uab.nomeBacheca = b.nome
-			// 		LEFT JOIN FilePubblicatoBacheca f
-			// 			ON f.codUtente = b.codiceUtente AND f.nomeBacheca = b.nome
-			// 		LEFT JOIN Utente u
-			// 			ON u.codice = b.codiceUtente
-			// ";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-			//$sql .= " GROUP BY fmm.numero, fmm.caricatoDa, fmm.tipo, fmm.dimensione, fmm.titolo, fmm.URL";
 
 			/*
 			 * prepara la query (statement)
@@ -107,7 +84,7 @@ require_once __DIR__ . '/functions.php';
 				echo "<table border='1'><tr>";
 
 				$mappa_colonne = [
-					'title'     => 'Nome file',
+					'title'     => 'File',
 					'size' 		=> 'Dimensione',
 					'type'      => 'Tipo',
 					'nickname'  => 'Caricato da'
