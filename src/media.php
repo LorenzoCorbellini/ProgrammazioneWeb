@@ -20,10 +20,18 @@ require_once __DIR__ . '/functions.php';
 	<?php 
 	$filtro_config = [
 		'campi' => [
-			['tipo'  => 'text',  'name' => 'filename', 'label' => 'File']
+			['tipo'  => 'text',  'name' => 'filename', 'label' => 'File'],
+			['tipo'  => 'select',  'name' => 'filetype', 'label' => 'Tipo',
+				'opzioni' => ['Immagini', 'Audio', 'Video']]
 		]
 	];
 	include 'filter.php';
+
+	$filetypes = [
+		'Immagini' => 'immagine',
+		'Audio' => 'audio',
+		'Video' => 'video'
+	];
 	?>
 	
 	<div id="content">
@@ -36,6 +44,12 @@ require_once __DIR__ . '/functions.php';
 			if (!empty($_GET['filename'])) {
 				$where[]             = "fmm.titolo LIKE :filename";
 				$params[':filename'] = '%' . $_GET['filename'] . '%';
+			}
+			// Filtro per tipo di file
+			if (!empty($_GET['filetype'])) {
+				$filetype = $filetypes[$_GET['filetype']];
+				$where[]             = "fmm.tipo = :filetype";
+				$params[':filetype'] =  $filetype;
 			}
 
 		/* VISTA DEI DATI */
@@ -73,14 +87,14 @@ require_once __DIR__ . '/functions.php';
 					'title'     => 'File',
 					'size' 		=> 'Dimensione',
 					'type'      => 'Tipo',
-					'nickname'  => 'Caricato da'
+					'nickname'  => 'Proprietario'
 				];
 				
 				/* Imposta i nomi delle colonne,
 				 * saltando quelle nella blacklist.
 				 * Il parame 'true' di 'in_array(...)' impone strict comparison
 				 */
-				$blacklist = ['file_id', 'url'];
+				$blacklist = ['owner', 'file_id', 'url', 'type'];
 				foreach (array_keys($righe[0]) as $colonna) {
 					if (in_array($colonna, $blacklist, true)) continue;
 					$titolo_visibile = $mappa_colonne[$colonna] ?? ucfirst($colonna);
@@ -89,6 +103,14 @@ require_once __DIR__ . '/functions.php';
 
 				echo "</tr>";
 				
+				$icon_types = [
+					'immagine' => 'images/image.png',
+					'video' => 'images/video.png',
+					'audio' => 'images/headphones.png',
+
+					'default' => 'images/document.png'
+				];
+
 				foreach ($righe as $riga) {
 					echo "<tr>";
 	
@@ -101,7 +123,12 @@ require_once __DIR__ . '/functions.php';
 						} elseif ($colonna === 'title') {
 							// Rimuove i 3 numeri alla fine del filename
 							$title = preg_replace('/\d{3}$/', '', $riga['title']);
-							echo "<td class='titolo'><a href='" . htmlspecialchars($riga['url']) .  "'>" . htmlspecialchars($title) . "</a></td>";
+							$icon_path = $icon_types[$riga['type']] ?? $icon_types['default'];
+							
+							echo "<td class='titolo'>";
+							echo "<img class='icona' src='" . htmlspecialchars($icon_path) . "' alt='" . htmlspecialchars($riga['type']) . "'>";
+							echo "<a href='" . htmlspecialchars($riga['url']) .  "'>" . htmlspecialchars($title) . "</a>";
+							echo "</td>";
 						} elseif ($colonna === 'nickname') {
 							$owner_link = "utenti.php?utente=" . urlencode($riga['owner']);
 							echo "<td class='titolo'><a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($val) . "</a></td>";
