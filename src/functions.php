@@ -29,7 +29,7 @@ function stampaTabella(array $righe, array $htmlColumns = [], array $customHeade
         echo "<tr>";
         foreach ($riga as $colonna => $valore) {
             $val = (string) $valore;
-            
+
             if (in_array($colonna, $htmlColumns, true)) {
                 echo "<td>" . $val . "</td>";
             } elseif (is_numeric($val)) {
@@ -45,17 +45,19 @@ function stampaTabella(array $righe, array $htmlColumns = [], array $customHeade
     echo "</table>";
 }
 
-function urlRitorno(): string {
-	$p = $_GET;
-	unset($p['vista'], $p['bacheca'], $p['owner']);
-	$q = http_build_query($p);
-	return 'bacheche.php' . ($q ? "?$q" : '');
+function urlRitorno(): string
+{
+    $p = $_GET;
+    unset($p['vista'], $p['bacheca'], $p['owner']);
+    $q = http_build_query($p);
+    return 'bacheche.php' . ($q ? "?$q" : '');
 }
 
 // =========================================================
 // HELPER PER RECUPERARE UTENTI
 // =========================================================
-function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc) {
+function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc)
+{
     $stmt = $pdo->prepare("
         SELECT u.codice, u.nickname, u.nome, u.cognome, u.dataNascita
         FROM UtenteAutorizzatoBacheca uab
@@ -64,7 +66,7 @@ function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc) {
     ");
     $stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
     $utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    
+
     $datiUtenti = [];
     foreach ($utenti as $u) {
         $azioni = ((int)$u['codice'] !== (int)$owner)
@@ -88,7 +90,8 @@ function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc) {
 // =========================================================
 // HELPER PER RECUPERARE FILE 
 // =========================================================
-function getFileBacheca($pdo, $bacheca, $owner, $bEnc) {
+function getFileBacheca($pdo, $bacheca, $owner, $bEnc)
+{
     $stmt = $pdo->prepare("
         SELECT fm.numero, fm.titolo, u.codice as caricatoDa, u.nickname, fm.dimensione, fm.URL, fm.tipo
         FROM FilePubblicatoBacheca fb
@@ -110,12 +113,12 @@ function getFileBacheca($pdo, $bacheca, $owner, $bEnc) {
     foreach ($file as $f) {
         $tipoStr = strtolower($f['tipo']);
         $icon_path = $icon_types[$tipoStr] ?? $icon_types['default'];
-        
+
         $title = preg_replace('/\d{3}$/', '', $f['titolo']);
-        
+
         $htmlFile = "<img class='icona icona-filetype' src='" . htmlspecialchars($icon_path) . "' alt='" . htmlspecialchars($tipoStr) . "'>";
         $htmlFile .= "<a href='" . htmlspecialchars($f['URL']) . "' target='_blank'>" . htmlspecialchars($title) . "</a>";
-        
+
         $owner_link = "utenti.php?utente=" . urlencode($f['caricatoDa']);
         $htmlOwner = "<a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($f['nickname']) . "</a>";
 
@@ -138,7 +141,7 @@ function getParametriPaginazione(int $elementiPerPagina = 50): array
 {
     $pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
     $offset = ($pagina - 1) * $elementiPerPagina;
-    
+
     return [$pagina, $elementiPerPagina, $offset];
 }
 
@@ -150,17 +153,17 @@ function stampaPaginazione(int $pagina, int $totaleRisultati, int $elementiPerPa
 
     echo "<div style='margin-top:20px;'>";
     $queryParams = $_GET;
-    
+
     if ($pagina > 1) {
         $queryParams['pagina'] = $pagina - 1;
-        echo "<a href='?" . http_build_query($queryParams) . "'>&larr; Precedente</a>";
+        echo "<a href='?" . http_build_query($queryParams) . "'>&larr;</a>";
     }
-    
+
     echo "<span style='margin:0 10px;'>Pagina $pagina di $totalePagine</span>";
-    
+
     if ($pagina < $totalePagine) {
         $queryParams['pagina'] = $pagina + 1;
-        echo "<a href='?" . http_build_query($queryParams) . "'>Successiva &rarr;</a>";
+        echo "<a href='?" . http_build_query($queryParams) . "'>&rarr;</a>";
     }
     echo "</div>";
 }
@@ -180,7 +183,7 @@ function getParametriOrdinamento(array $allowed_sorts, string $default_col = 'da
 {
     $sort_col = $_GET['sort'] ?? $default_col;
     $sort_dir = strtoupper($_GET['dir'] ?? $default_dir);
-    
+
     if ($sort_dir !== 'ASC' && $sort_dir !== 'DESC') {
         $sort_dir = $default_dir;
     }
@@ -200,23 +203,21 @@ function getParametriOrdinamento(array $allowed_sorts, string $default_col = 'da
 function generaIntestazioniOrdinabili(array $colonneOrdinabili, string $sort_col, string $sort_dir): array
 {
     $customHeaders = [];
-    
+
     foreach ($colonneOrdinabili as $titoloVisibile => $chiaveSort) {
         $params = $_GET;
         $params['sort'] = $chiaveSort;
-        
+
         $params['dir'] = ($sort_col === $chiaveSort && $sort_dir === 'ASC') ? 'DESC' : 'ASC';
-        
+
         $url = "?" . http_build_query($params);
-        $icona = "<img src='images/bi-directional-arrow.png' alt='Ordina' style='width:12px; margin-left:5px; vertical-align:middle;'>";
-        
+        $icona = "<img src='images/bi-directional-arrow.png' alt='Ordina' class='icona-ordinamento'>";
         $customHeaders[$titoloVisibile] = "
             <a href='{$url}' style='text-decoration: none; color: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 100%; height: 100%;'>
                 " . htmlspecialchars($titoloVisibile) . " {$icona}
             </a>
         ";
     }
-    
+
     return $customHeaders;
 }
-?>

@@ -79,6 +79,11 @@ ol {
     width: 100%;
 }
 
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
 li a {
     display: block;
     color: var(--text-light);
@@ -218,6 +223,30 @@ footer {
 }
 
 /* --- TABELLE --- */
+th {
+    font-size: 1.3rem;
+    font-weight: 400;
+    padding: clamp(10px, 1vh, 14px) clamp(12px, 1vw, 20px);
+    text-align: center;
+}
+
+th a {
+    text-decoration: none;
+    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+th img.icona-ordinamento {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 td.numero,
 td.data {
     text-align: right;
@@ -254,20 +283,22 @@ td {
 .btn-aggiungi {
     cursor: pointer;
     text-decoration: none;
-    display: inline-flex;       
+    display: inline-flex;
     align-items: center;
-    gap: 8px;                   
-    color: var(--accent);       
+    gap: 10px;
+    color: var(--accent);
     transition: color 0.2s ease, transform 0.2s ease;
+    font-size: 1.4rem;
 }
 
 .btn-aggiungi:hover {
-    color: var(--accent-hover); 
-    transform: translateY(-1px); 
+    color: var(--accent-hover);
+    transform: translateY(-1px);
+    text-decoration: none;
 }
 
 .btn-aggiungi img {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
     vertical-align: middle;
 }
