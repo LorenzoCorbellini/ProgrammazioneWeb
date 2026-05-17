@@ -20,14 +20,17 @@ require_once __DIR__ . '/functions.php';
 			<?php include 'nav.html'; ?>
 
 			<?php
-			// Configurazione dei filtri visibile solo nella lista principale
+			// =========================================================
+			// CONFIGURAZIONE DINAMICA DEI FILTRI NELLA SIDEBAR
+			// =========================================================
 			if (empty($_GET['utente'])) {
+				// Filtri per la lista globale degli utenti
 				$filtro_config = [
 					'campi' => [
 						['tipo'  => 'text', 'name' => 'nickname', 'label' => 'Nickname'],
 						['tipo'  => 'text', 'name' => 'nome',     'label' => 'Nome'],
 						['tipo'  => 'text', 'name' => 'cognome',  'label' => 'Cognome'],
-						['tipo'  => 'text', 'name' => 'data',     'label' => 'Data di Nascita (gg/mm/aaaa)'],
+						['tipo'  => 'date', 'name' => 'data',     'label' => 'Data di Nascita (Da)'],
 					]
 				];
 				include 'filter.php';
@@ -38,114 +41,32 @@ require_once __DIR__ . '/functions.php';
 		<div id="content">
 			<?php
 			// =========================================================
-			// ROUTING VISTE: VISTA DETTAGLIO UTENTE (PROFILO)
+			// ROUTING VISTE
 			// =========================================================
 			if (!empty($_GET['utente'])) {
-				$idUtente = (int)$_GET['utente'];
+				// ---------------------------------------------------------
+				// VISTA DETTAGLIO: Profilo del singolo utente
+				// ---------------------------------------------------------
+				$codiceUtente = $_GET['utente'];
 
-				// 1. Lettura dati anagrafici dell'utente selezionato
-				$stmtUtente = $pdo->prepare("SELECT nickname, nome, cognome, dataNascita FROM utente WHERE codice = :codice");
-				$stmtUtente->execute([':codice' => $idUtente]);
-				$infoUtente = $stmtUtente->fetch(PDO::FETCH_ASSOC);
+				$sqlUtente = "SELECT nickname, nome, cognome, dataNascita FROM utente WHERE codice = :codice";
+				$stmtUtente = $pdo->prepare($sqlUtente);
+				$stmtUtente->execute([':codice' => $codiceUtente]);
+				$utente = $stmtUtente->fetch(PDO::FETCH_ASSOC);
 
-				if ($infoUtente) {
-					echo "<p><a href='utenti.php'>&larr; Torna all'elenco utenti</a></p>";
-					echo "<h2 class='h2utente'>Profilo di <b><i>" . htmlspecialchars($infoUtente['nickname']) . "</i></b></h2>";
-					echo "<p><strong>Nome:</strong> " . htmlspecialchars($infoUtente['nome']) . "</p>";
-					echo "<p><strong>Cognome:</strong> " . htmlspecialchars($infoUtente['cognome']) . "</p>";
-					echo "<p><strong>Data di Nascita:</strong> " . formattaData($infoUtente['dataNascita']) . "</p>";
-
-					// ---------------------------------------------------------
-					// TABELLA 1: BACHECHE ASSOCIATE CON LINK INCROCIATI
-					// ---------------------------------------------------------
-					echo "<h3>Bacheche associate</h3>";
-					
-					$stmtBacheche = $pdo->prepare("
-						SELECT 
-							b.nome AS nome_bacheca,
-							b.codiceUtente AS bacheca_owner_id,
-							u_prop.nickname AS proprietario_nickname
-						FROM UtenteAutorizzatoBacheca uab
-						JOIN Bacheca b ON uab.codUtente = b.codiceUtente AND uab.nomeBacheca = b.nome
-						JOIN Utente u_prop ON b.codiceUtente = u_prop.codice
-						WHERE uab.utenteAutorizzato = :codice
-						ORDER BY b.nome ASC
-					");
-					$stmtBacheche->execute([':codice' => $idUtente]);
-					$bachecheRaw = $stmtBacheche->fetchAll(PDO::FETCH_ASSOC);
-
-					if (!empty($bachecheRaw)) {
-						$datiBacheche = [];
-						foreach ($bachecheRaw as $bacheca) {
-							// Link che porta alla pagina bacheche.php passando vista, nome bacheca e proprietario
-							$linkBacheca = "bacheche.php?vista=dettaglio&bacheca=" . urlencode($bacheca['nome_bacheca']) . "&owner=" . urlencode($bacheca['bacheca_owner_id']);
-							$htmlBacheca = "<a href='{$linkBacheca}'>" . htmlspecialchars($bacheca['nome_bacheca']) . "</a>";
-
-							// Link che porta alla pagina utenti.php per il profilo del proprietario
-							$linkOwnerBacheca = "utenti.php?utente=" . urlencode($bacheca['bacheca_owner_id']);
-							$htmlProprietario = "<a href='{$linkOwnerBacheca}'>" . htmlspecialchars($bacheca['proprietario_nickname']) . "</a>";
-
-							$datiBacheche[] = [
-								'Nome Bacheca' => $htmlBacheca,
-								'Proprietario' => $htmlProprietario
-							];
-						}
-						// Consentiamo il rendering HTML dei link indicandoli nel secondo parametro
-						stampaTabella($datiBacheche, ['Nome Bacheca', 'Proprietario']);
-					} else {
-						echo "<p>L'utente non partecipa a nessuna bacheca.</p>";
-					}
-
-					// ---------------------------------------------------------
-					// TABELLA 2: GRUPPI DI APPARTENENZA CON LINK INCROCIATI
-					// ---------------------------------------------------------
-					echo "<h3>Gruppi di appartenenza</h3>";
-
-					$stmtGruppi = $pdo->prepare("
-						SELECT 
-							g.codice AS gruppo_id,
-							g.nome AS nome_gruppo,
-							g.creatoDa AS gruppo_owner_id,
-							u_prop.nickname AS proprietario_nickname
-						FROM UtenteAutorizzatoGruppo uag
-						JOIN Gruppo g ON uag.codGruppo = g.codice
-						JOIN Utente u_prop ON g.creatoDa = u_prop.codice
-						WHERE uag.codUtente = :codice
-						ORDER BY g.nome ASC
-					");
-					$stmtGruppi->execute([':codice' => $idUtente]);
-					$gruppiRaw = $stmtGruppi->fetchAll(PDO::FETCH_ASSOC);
-
-					if (!empty($gruppiRaw)) {
-						$datiGruppi = [];
-						foreach ($gruppiRaw as $gruppo) {
-							// Link che porta alla pagina gruppi.php passando l'ID univoco del gruppo
-							$linkGruppo = "gruppi.php?gruppo=" . urlencode($gruppo['gruppo_id']);
-							$htmlGruppo = "<a href='{$linkGruppo}'>" . htmlspecialchars($gruppo['nome_gruppo']) . "</a>";
-
-							// Link che porta alla pagina utenti.php per il profilo del creatore del gruppo
-							$linkOwnerGruppo = "utenti.php?utente=" . urlencode($gruppo['gruppo_owner_id']);
-							$htmlProprietarioGruppo = "<a href='{$linkOwnerGruppo}'>" . htmlspecialchars($gruppo['proprietario_nickname']) . "</a>";
-
-							$datiGruppi[] = [
-								'Nome Gruppo'  => $htmlGruppo,
-								'Proprietario' => $htmlProprietarioGruppo
-							];
-						}
-						// Consentiamo il rendering HTML dei link indicandoli nel secondo parametro
-						stampaTabella($datiGruppi, ['Nome Gruppo', 'Proprietario']);
-					} else {
-						echo "<p>L'utente non è iscritto a nessun gruppo.</p>";
-					}
-
+				if ($utente) {
+					echo "<h2>Profilo di " . htmlspecialchars($utente['nickname']) . "</h2>";
+					echo "<p><strong>Nome:</strong> " . htmlspecialchars($utente['nome']) . "</p>";
+					echo "<p><strong>Cognome:</strong> " . htmlspecialchars($utente['cognome']) . "</p>";
+					echo "<p><strong>Data di Nascita:</strong> " . formattaData($utente['dataNascita']) . "</p>";
+					echo "<p><a href='utenti.php'>&larr; Torna alla lista utenti</a></p>";
 				} else {
 					echo "<p>Utente non trovato.</p>";
 				}
-
 			} else {
-				// =========================================================
-				// VISTA PRINCIPALE: ELENCO GENERALE UTENTI
-				// =========================================================
+				// ---------------------------------------------------------
+				// VISTA PRINCIPALE: Tabella globale con filtri e paginazione
+				// ---------------------------------------------------------
 				$where = [];
 				$params = [];
 
@@ -161,17 +82,17 @@ require_once __DIR__ . '/functions.php';
 					$where[] = "cognome LIKE :cognome";
 					$params[':cognome'] = '%' . $_GET['cognome'] . '%';
 				}
+				
+				// Filtro data modificato: tipo 'date' nativo (aaaa-mm-gg) come in bacheche.php
 				if (!empty($_GET['data'])) {
-					$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
-					if ($dataConvertita) {
-						$where[] = "DATE(dataNascita) = :data";
-						$params[':data'] = $dataConvertita->format('Y-m-d');
-					}
+					$where[] = "DATE(dataNascita) >= :data";
+					$params[':data'] = $_GET['data'];
 				}
 
-				// Calcolo parametri globali di paginazione e ordinamento
+				// Parametri di Paginazione (es. 50 record per pagina)
 				list($pagina, $limit, $offset) = getParametriPaginazione(50);
 
+				// Parametri di Ordinamento Dinamico
 				list($sort_col, $sort_dir, $sql_sort) = getParametriOrdinamento([
 					'nickname' => 'nickname',
 					'nome'     => 'nome',
@@ -179,24 +100,27 @@ require_once __DIR__ . '/functions.php';
 					'data'     => 'dataNascita'
 				], 'nickname', 'ASC');
 
-				// Conteggio record totali filtrati
-				$sqlCount = "SELECT COUNT(*) AS totale FROM utente";
-				if ($where) $sqlCount .= " WHERE " . implode(" AND ", $where);
-				$stmtCount = $pdo->prepare($sqlCount);
-				$stmtCount->execute($params);
-				$totaleRisultati = $stmtCount->fetch(PDO::FETCH_ASSOC)['totale'];
+				// Conteggio totale dei risultati per la paginazione
+				$sqlContatore = "SELECT COUNT(*) FROM utente";
+				if ($where) {
+					$sqlContatore .= " WHERE " . implode(" AND ", $where);
+				}
+				$stmtContatore = $pdo->prepare($sqlContatore);
+				$stmtContatore->execute($params);
+				$totaleRisultati = $stmtContatore->fetchColumn();
 
-				// Selezione dei dati
+				// Query principale con filtri, ordinamento e limiti
 				$sql = "
-					SELECT 
-						codice AS owner,
-						nickname AS 'Nickname',
-						nome AS 'Nome',
-						cognome AS 'Cognome',
-						dataNascita AS 'Data di Nascita'
+					SELECT codice as 'owner',
+					       nickname as 'Nickname',
+					       nome as 'Nome',
+					       cognome as 'Cognome',
+					       dataNascita as 'Data di Nascita'
 					FROM utente
 				";
-				if ($where) $sql .= " WHERE " . implode(" AND ", $where);
+				if ($where) {
+					$sql .= " WHERE " . implode(" AND ", $where);
+				}
 				$sql .= " ORDER BY {$sql_sort} {$sort_dir} LIMIT :limit OFFSET :offset";
 
 				$stmt = $pdo->prepare($sql);
@@ -213,6 +137,7 @@ require_once __DIR__ . '/functions.php';
 				if (!empty($righe)) {
 					$datiUtenti = [];
 					foreach ($righe as $riga) {
+						// Generiamo il link ipertestuale che punta alla vista dettaglio dello specifico utente
 						$linkDettaglio = "utenti.php?utente=" . urlencode($riga['owner']);
 						$htmlNickname = "<a href='{$linkDettaglio}'>" . htmlspecialchars($riga['Nickname']) . "</a>";
 
@@ -224,6 +149,7 @@ require_once __DIR__ . '/functions.php';
 						];
 					}
 
+					// Generazione dinamica dei link per l'ordinamento delle colonne
 					$customHeaders = generaIntestazioniOrdinabili([
 						'Nickname'        => 'nickname',
 						'Nome'            => 'nome',
@@ -231,10 +157,13 @@ require_once __DIR__ . '/functions.php';
 						'Data di Nascita' => 'data'
 					], $sort_col, $sort_dir);
 
+					// Stampiamo la tabella passando 'Nickname' nelle colonne HTML consentite per preservare il link <a>
 					stampaTabella($datiUtenti, ['Nickname'], $customHeaders);
+
+					// Barra di navigazione per la paginazione
 					stampaPaginazione($pagina, $totaleRisultati, $limit);
 				} else {
-					echo "<p>Nessun utente trovato con i filtri inseriti.</p>";
+					echo "<p class='info-risultati'>Nessun utente trovato con i criteri di ricerca selezionati.</p>";
 				}
 			}
 			?>
