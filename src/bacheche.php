@@ -363,9 +363,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				echo "<table border='1'><tr>";
 				foreach (array_keys($utenti[0]) as $col) echo "<th>" . htmlspecialchars($col) . "</th>";
 				echo "<th>Azioni</th></tr>";
+				
 				foreach ($utenti as $u) {
 					echo "<tr>";
-					foreach ($u as $v) echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+					foreach ($u as $col => $v) {
+						if ($col === 'Codice') {
+							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
+						} elseif ($col === 'Data Nascita') {
+							echo "<td class='data'>" . formattaData((string)$v) . "</td>";
+						} else {
+							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+						}
+					}
 
 					echo "<td style='text-align:center;'>";
 					if ((int)$u['Codice'] !== (int)$owner) {
@@ -411,11 +420,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			if ($file) {
 				echo "<table border='1'><tr>";
-				foreach (array_keys($file[0]) as $col) echo "<th>" . htmlspecialchars($col) . "</th>";
+				foreach (array_keys($file[0]) as $col) {
+					if ($col === 'ID File') continue; 
+					echo "<th>" . htmlspecialchars($col) . "</th>";
+				}
 				echo "<th>Azioni</th></tr>";
+				
 				foreach ($file as $f) {
 					echo "<tr>";
-					foreach ($f as $v) echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+					foreach ($f as $col => $v) {
+						if ($col === 'ID File') continue;
+
+						if ($col === 'Dimensione(MB)') {
+							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
+						} elseif ($col === 'URL') {
+							$urlSicuro = htmlspecialchars((string)$v);
+							echo "<td><a href='{$urlSicuro}' target='_blank'>{$urlSicuro}</a></td>";
+						} elseif ($col === 'Tipo') {
+							$tipo = strtolower((string)$v);
+							$img = 'document.png'; 
+							if ($tipo === 'audio') $img = 'headphones.png';
+							elseif ($tipo === 'immagine') $img = 'image.png';
+							elseif ($tipo === 'video') $img = 'video.png';
+							
+							echo "<td style='text-align:center;'>
+									<img src='images/{$img}' alt='{$tipo}' title='{$tipo}' class='icona'>
+								  </td>";
+						} else {
+							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+						}
+					}
 
 					echo "<td style='text-align:center;'>";
 					echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviFile('{$bEnc}', {$owner}, {$f['ID File']})\">";
@@ -473,9 +507,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				echo "<table border='1'><tr>";
 				foreach (array_keys($utenti[0]) as $col) echo "<th>" . htmlspecialchars($col) . "</th>";
 				echo "<th>Azioni</th></tr>";
+				
 				foreach ($utenti as $u) {
 					echo "<tr>";
-					foreach ($u as $v) echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+					foreach ($u as $col => $v) {
+						if ($col === 'Codice') {
+							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
+						} elseif ($col === 'Data Nascita') {
+							echo "<td class='data'>" . formattaData((string)$v) . "</td>";
+						} else {
+							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+						}
+					}
 
 					echo "<td style='text-align:center;'>";
 					if ((int)$u['Codice'] !== (int)$owner) {
@@ -536,11 +579,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			if ($file) {
 				echo "<table border='1'><tr>";
-				foreach (array_keys($file[0]) as $col) echo "<th>" . htmlspecialchars($col) . "</th>";
+				foreach (array_keys($file[0]) as $col) {
+					if ($col === 'ID File') continue; 
+					echo "<th>" . htmlspecialchars($col) . "</th>";
+				}
 				echo "<th>Azioni</th></tr>";
+				
 				foreach ($file as $f) {
 					echo "<tr>";
-					foreach ($f as $v) echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+					foreach ($f as $col => $v) {
+						if ($col === 'ID File') continue;
+
+						if ($col === 'Dimensione(MB)') {
+							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
+						} elseif ($col === 'URL') {
+							$urlSicuro = htmlspecialchars((string)$v);
+							echo "<td><a href='{$urlSicuro}' target='_blank'>{$urlSicuro}</a></td>";
+						} elseif ($col === 'Tipo') {
+							$tipo = strtolower((string)$v);
+							$img = 'document.png'; 
+							if ($tipo === 'audio') $img = 'headphones.png';
+							elseif ($tipo === 'immagine') $img = 'image.png';
+							elseif ($tipo === 'video') $img = 'video.png';
+							
+							echo "<td style='text-align:center;'>
+									<img src='images/{$img}' alt='{$tipo}' title='{$tipo}' class='icona'>
+								  </td>";
+						} else {
+							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
+						}
+					}
 
 					echo "<td style='text-align:center;'>";
 					echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviFile('{$bEnc}', {$owner}, {$f['ID File']})\">";
