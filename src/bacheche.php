@@ -27,7 +27,7 @@ require_once __DIR__ . '/functions.php';
 			'campi' => [
 				['tipo' => 'text', 'name' => 'titolo',       'label' => 'Nome Bacheca'],
 				['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
-				['tipo' => 'text', 'name' => 'data',         'label' => 'Data (gg/mm/aaaa)'],
+				['tipo' => 'date', 'name' => 'data',         'label' => 'Data Creazione (Da)'],
 			]
 		];
 		include 'filter.php';
@@ -82,12 +82,10 @@ require_once __DIR__ . '/functions.php';
 				$where[]                 = "u.nickname LIKE :proprietario";
 				$params[':proprietario'] = '%' . $_GET['proprietario'] . '%';
 			}
+			
 			if (!empty($_GET['data'])) {
-				$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
-				if ($dataConvertita) {
-					$where[]         = "DATE(b.dataCreazione) >= :data";
-					$params[':data'] = $dataConvertita->format('Y-m-d');
-				}
+				$where[]         = "DATE(b.dataCreazione) >= :data";
+				$params[':data'] = $_GET['data'];
 			}
 
 			list($pagina, $limit, $offset) = getParametriPaginazione(50);
