@@ -11,10 +11,12 @@ require_once __DIR__ . '/functions.php';
 
 <body>
 	<header><h1 id="hcod1">Utenti</h1></header>
-<?php	
-	include 'nav.html';
-	include 'footer.html';
-?>
+	
+	<div class="main-container">
+	<aside class="sidebar">
+		<?php include 'nav.html'; ?>
+	</aside>
+
 	<div id="content">     
 		<?php
 			// In $where memorizziamo i filtri da aggiungere alla query, scritti in sql
@@ -65,6 +67,8 @@ require_once __DIR__ . '/functions.php';
 	echo "</table>";
 		?>
 	</div>
+	</div>
 
+	<?php include 'footer.html'; ?>
 </body>
 </html>

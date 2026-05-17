@@ -29,6 +29,26 @@ body {
     font-weight: 200;
     margin: 0;
     padding: 0;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-container {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    box-sizing: border-box;
+    align-items: flex-start;
+}
+
+.sidebar {
+    width: var(--nav-width);
+    display: flex;
+    flex-direction: column;
+    background: var(--primary);
+    overflow-y: auto;
 }
 
 /* --- HEADER --- */
@@ -52,9 +72,7 @@ ol {
     margin: 0;
     padding: clamp(8px, 1.5vh, 20px) 0;
     background-color: var(--primary);
-    float: left;
-    width: var(--nav-width);
-    box-shadow: 4px 0 15px var(--shadow);
+    width: 100%;
 }
 
 li a {
@@ -91,14 +109,11 @@ li.navbar a:hover:not(.active) {
 }
 
 #filtro {
-    float: left;
-    clear: left;
-    width: var(--nav-width);
     background-color: var(--surface);
     border-top: 2px solid var(--border-soft);
-    box-shadow: 4px 4px 15px var(--shadow);
     padding: clamp(12px, 1.5vh, 24px) clamp(12px, 1.2vw, 20px);
     box-sizing: border-box;
+    width: 100%;
 }
 
 #filtro h3 {
@@ -172,7 +187,8 @@ li.navbar a:hover:not(.active) {
 
 /* --- CONTENUTO --- */
 #content {
-    margin-left: calc(var(--nav-width) + clamp(12px, 1.5vw, 30px));
+    flex: 1;
+    margin-left: clamp(12px, 1.5vw, 30px);
     margin-top: clamp(20px, 3vh, 40px);
     margin-right: clamp(12px, 1.5vw, 30px);
     padding: clamp(20px, 2.5vw, 40px);
@@ -187,14 +203,14 @@ li.navbar a:hover:not(.active) {
 
 /* --- FOOTER --- */
 footer {
-    position: fixed;
+    margin-top: auto;
     font-size: var(--fs-footer);
     width: 100%;
-    bottom: 0;
     background: var(--primary);
     color: rgba(255, 255, 255, 0.9);
     text-align: center;
     padding: clamp(4px, 0.6vh, 8px) 0;
+    box-sizing: border-box;
 }
 
 /* --- TABELLE --- */
@@ -222,8 +238,11 @@ td {
 }
 
 .icona {
-     width:16px;
-     height:16px;
-     vertical-align:middle;
-     margin-right:10px;
+    width:16px;
+    height:16px;
+}
+
+.icona-filetype {
+    vertical-align:middle;
+    margin-right:10px;
 }

@@ -298,18 +298,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<h1 id="hcod1">Bacheche</h1>
 	</header>
 
-	<?php include 'nav.html'; ?>
+	<div class="main-container">
+	<aside class="sidebar">
+		<?php include 'nav.html'; ?>
 
-	<?php
-	$filtro_config = [
-		'campi' => [
-			['tipo' => 'text', 'name' => 'titolo',      'label' => 'Nome Bacheca'],
-			['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
-			['tipo' => 'text', 'name' => 'data',         'label' => 'Data (gg/mm/aaaa)'],
-		]
-	];
-	include 'filter.php';
-	?>
+		<?php
+		$filtro_config = [
+			'campi' => [
+				['tipo' => 'text', 'name' => 'titolo',      'label' => 'Nome Bacheca'],
+				['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
+				['tipo' => 'text', 'name' => 'data',         'label' => 'Data (gg/mm/aaaa)'],
+			]
+		];
+		include 'filter.php';
+		?>
+	</aside>
 
 	<div id="content">
 		<?php
@@ -719,6 +722,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			}
 		}
 		?>
+	</div>
 	</div>
 
 	<?php include 'footer.html'; ?>

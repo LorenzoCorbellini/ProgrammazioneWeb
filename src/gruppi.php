@@ -14,11 +14,17 @@ require_once __DIR__ . '/functions.php';
 	<header>
 		<h1 id="hcod1">Gruppi</h1>
 	</header>
-	<?php
-	include 'nav.html';
-	include 'footer.html';
 	
+	<div class="main-container">
+	<aside class="sidebar">
+		<?php
+		include 'nav.html';
+		?>
+	</aside>
+
 	<div id="content">
+		
+		<?php
 		
 			$sql = "
 			SELECT 
@@ -58,7 +64,9 @@ require_once __DIR__ . '/functions.php';
 			echo "</table>";
 		?>
 	</div>
+	</div>
 
+	<?php include 'footer.html'; ?>
 </body>
 
 </html>
