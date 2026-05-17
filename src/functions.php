@@ -10,7 +10,7 @@ function formattaData(string $val): string
     return $d ? $d->format('d/m/Y') : htmlspecialchars($val);
 }
 
-function stampaTabella(array $righe): void
+function stampaTabella(array $righe, array $htmlColumns = []): void
 {
     if (empty($righe)) {
         echo "<p>Nessun risultato trovato.</p>";
@@ -23,11 +23,19 @@ function stampaTabella(array $righe): void
     echo "</tr>";
     foreach ($righe as $riga) {
         echo "<tr>";
-        foreach ($riga as $valore) {
+        foreach ($riga as $colonna => $valore) {
             $val = (string) $valore;
-            if (is_numeric($val))  echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
-            elseif (isData($val))  echo "<td class='data'>"   . formattaData($val) . "</td>";
-            else                   echo "<td>"                 . htmlspecialchars($val) . "</td>";
+            
+            // Se la colonna permette codice HTML (link, bottoni), non fa l'escape
+            if (in_array($colonna, $htmlColumns, true)) {
+                echo "<td>" . $val . "</td>";
+            } elseif (is_numeric($val)) {
+                echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
+            } elseif (isData($val)) {
+                echo "<td class='data'>"   . formattaData($val) . "</td>";
+            } else {
+                echo "<td>"                 . htmlspecialchars($val) . "</td>";
+            }
         }
         echo "</tr>";
     }
@@ -59,10 +67,6 @@ function get_media_table(array $righe, int $numero_records, int $limit): string 
         'nickname'  => 'Proprietario'
     ];
     
-    /* Imposta i nomi delle colonne,
-        * saltando quelle nella blacklist.
-        * Il parame 'true' di 'in_array(...)' impone strict comparison
-        */
     $blacklist = ['owner', 'file_id', 'url', 'type'];
     foreach (array_keys($righe[0]) as $colonna) {
         if (in_array($colonna, $blacklist, true)) continue;
@@ -83,14 +87,11 @@ function get_media_table(array $righe, int $numero_records, int $limit): string 
     foreach ($righe as $riga) {
         $html .= "<tr>";
 
-        // $item as $key => $value
         foreach ($riga as $colonna => $valore) {
             $val = (string) $valore;
             if (in_array($colonna, $blacklist, true)) {
                 continue;
-            // Mostra link cliccabile sui nomi dei file
             } elseif ($colonna === 'title') {
-                // Rimuove i 3 numeri alla fine del filename
                 $title = preg_replace('/\d{3}$/', '', $riga['title']);
                 $icon_path = $icon_types[$riga['type']] ?? $icon_types['default'];
                 
@@ -114,3 +115,4 @@ function get_media_table(array $righe, int $numero_records, int $limit): string 
     $html .= "</table>";
     return $html;
 }
+?>

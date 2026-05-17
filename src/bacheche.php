@@ -24,7 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	// AGGIUNGI BACHECA
 	// ---------------------------------------------------------
 	if ($azione === 'aggiungi') {
-		// Verifica esistenza utente
 		$st = $pdo->prepare("SELECT COUNT(*) FROM Utente WHERE codice = ?");
 		$st->execute([$owner]);
 		if ($st->fetchColumn() == 0) {
@@ -32,7 +31,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			exit;
 		}
 
-		// Verifica se esiste già una bacheca con lo stesso nome per questo utente
 		$st = $pdo->prepare("SELECT COUNT(*) FROM Bacheca WHERE nome = ? AND codiceUtente = ?");
 		$st->execute([$nome, $owner]);
 		if ($st->fetchColumn() > 0) {
@@ -41,29 +39,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		}
 
 		try {
-			// Iniziamo una transazione per eseguire due inserimenti "tutto o niente"
 			$pdo->beginTransaction();
 
 			$dataOggi = date('Y-m-d');
-
-			// Inserimento nella tabella Bacheca
 			$stmt1 = $pdo->prepare("INSERT INTO Bacheca (nome, codiceUtente, dataCreazione) VALUES (?, ?, ?)");
 			$stmt1->execute([$nome, $owner, $dataOggi]);
 
-			// Inserimento nella tabella UtenteAutorizzatoBacheca (il proprietario è il primo autorizzato)
 			$stmt2 = $pdo->prepare("INSERT INTO UtenteAutorizzatoBacheca (nomeBacheca, codUtente, utenteAutorizzato) VALUES (?, ?, ?)");
 			$stmt2->execute([$nome, $owner, $owner]);
 
-			// Confermiamo le modifiche nel database
 			$pdo->commit();
-
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
-			// In caso di errore annulla tutto
-			if ($pdo->inTransaction()) {
-				$pdo->rollBack();
-			}
-			echo json_encode(['successo' => false, 'messaggio' => 'Errore durante la creazione: ' . $e->getMessage()]);
+			if ($pdo->inTransaction()) $pdo->rollBack();
+			echo json_encode(['successo' => false, 'messaggio' => 'Errore: ' . $e->getMessage()]);
 		}
 		exit;
 	}
@@ -79,19 +68,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			exit;
 		}
 
-		// Verifica che l'utente esista nel database
 		$st = $pdo->prepare("SELECT COUNT(*) FROM Utente WHERE codice = ?");
 		$st->execute([$nuovoUtente]);
 		if ($st->fetchColumn() == 0) {
-			echo json_encode(['successo' => false, 'messaggio' => 'L\'utente con questo codice non esiste.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'L\'utente non esiste.']);
 			exit;
 		}
 
-		// Verifica se l'utente è già autorizzato in questa bacheca
 		$st = $pdo->prepare("SELECT COUNT(*) FROM UtenteAutorizzatoBacheca WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?");
 		$st->execute([$nome, $owner, $nuovoUtente]);
 		if ($st->fetchColumn() > 0) {
-			echo json_encode(['successo' => false, 'messaggio' => 'L\'utente è già autorizzato per questa bacheca.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'Utente già autorizzato.']);
 			exit;
 		}
 
@@ -111,17 +98,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	if ($azione === 'rimuovi_autorizzato') {
 		$target = (int) ($input['utenteDaRimuovere'] ?? 0);
 
-		// Se l'utente da rimuovere è il proprietario, blocca l'operazione
 		if ($target === $owner) {
-			echo json_encode(['successo' => false, 'messaggio' => 'Non puoi rimuovere il proprietario della bacheca.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'Non puoi rimuovere il proprietario.']);
 			exit;
 		}
 
 		try {
-			$pdo->prepare("
-                DELETE FROM UtenteAutorizzatoBacheca 
-                WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?
-            ")->execute([$nome, $owner, $target]);
+			$pdo->prepare("DELETE FROM UtenteAutorizzatoBacheca WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?")
+			    ->execute([$nome, $owner, $target]);
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
 			echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
@@ -140,39 +124,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			exit;
 		}
 
-		// Recuperiamo chi ha caricato il file
 		$stFile = $pdo->prepare("SELECT caricatoDa FROM FileMultimediale WHERE numero = ?");
 		$stFile->execute([$nuovoFile]);
 		$fileData = $stFile->fetch(PDO::FETCH_ASSOC);
 
 		if (!$fileData) {
-			echo json_encode(['successo' => false, 'messaggio' => 'Il file non esiste nel database.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'Il file non esiste.']);
 			exit;
 		}
 
 		$creatoreFile = (int) $fileData['caricatoDa'];
 
-		// Verifichiamo se il creatore del file è autorizzato per questa bacheca
-		$stAuth = $pdo->prepare("
-			SELECT COUNT(*) 
-			FROM UtenteAutorizzatoBacheca 
-			WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?
-		");
+		$stAuth = $pdo->prepare("SELECT COUNT(*) FROM UtenteAutorizzatoBacheca WHERE nomeBacheca = ? AND codUtente = ? AND utenteAutorizzato = ?");
 		$stAuth->execute([$nome, $owner, $creatoreFile]);
-
 		if ($stAuth->fetchColumn() == 0) {
-			echo json_encode([
-				'successo' => false, 
-				'messaggio' => 'Azione negata: l\'utente che ha creato questo file non è autorizzato per questa bacheca.'
-			]);
+			echo json_encode(['successo' => false, 'messaggio' => 'Creatore non autorizzato per questa bacheca.']);
 			exit;
 		}
 
-		// Verifica se il file è già in bacheca
 		$st = $pdo->prepare("SELECT COUNT(*) FROM FilePubblicatoBacheca WHERE nomeBacheca = ? AND codUtente = ? AND file = ?");
 		$st->execute([$nome, $owner, $nuovoFile]);
 		if ($st->fetchColumn() > 0) {
-			echo json_encode(['successo' => false, 'messaggio' => 'Il file è già stato pubblicato in questa bacheca.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'Il file è già stato pubblicato.']);
 			exit;
 		}
 
@@ -191,12 +164,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	// ---------------------------------------------------------
 	if ($azione === 'rimuovi_file') {
 		$targetFile = (int) ($input['fileDaRimuovere'] ?? 0);
-
 		try {
-			$pdo->prepare("
-                DELETE FROM FilePubblicatoBacheca 
-                WHERE nomeBacheca = ? AND codUtente = ? AND file = ?
-            ")->execute([$nome, $owner, $targetFile]);
+			$pdo->prepare("DELETE FROM FilePubblicatoBacheca WHERE nomeBacheca = ? AND codUtente = ? AND file = ?")
+			    ->execute([$nome, $owner, $targetFile]);
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
 			echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
@@ -204,87 +174,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		exit;
 	}
 
-	// Verifica che la bacheca esista (per modifica/elimina)
-	$check = $pdo->prepare("
-        SELECT COUNT(*) FROM Bacheca
-        WHERE nome = :nome AND codiceUtente = :owner
-    ");
+	// ---------------------------------------------------------
+	// MODIFICA & ELIMINA
+	// ---------------------------------------------------------
+	$check = $pdo->prepare("SELECT COUNT(*) FROM Bacheca WHERE nome = :nome AND codiceUtente = :owner");
 	$check->execute([':nome' => $nome, ':owner' => $owner]);
 
 	if ($check->fetchColumn() == 0) {
-		echo json_encode(['successo' => false, 'messaggio' => 'Bacheca non trovata nel database.']);
+		echo json_encode(['successo' => false, 'messaggio' => 'Bacheca non trovata.']);
 		exit;
 	}
 
-	// ---------------------------------------------------------
-	// MODIFICA
-	// ---------------------------------------------------------
 	if ($azione === 'modifica') {
-
 		$nuovoNome = trim($input['nuovoNome'] ?? '');
-
 		if ($nuovoNome === '') {
-			echo json_encode(['successo' => false, 'messaggio' => 'Il nuovo nome non può essere vuoto.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'Nome non valido.']);
 			exit;
 		}
 
-		$checkDup = $pdo->prepare("
-            SELECT COUNT(*) FROM Bacheca
-            WHERE nome = :nuovoNome AND codiceUtente = :owner
-        ");
+		$checkDup = $pdo->prepare("SELECT COUNT(*) FROM Bacheca WHERE nome = :nuovoNome AND codiceUtente = :owner");
 		$checkDup->execute([':nuovoNome' => $nuovoNome, ':owner' => $owner]);
-
 		if ($checkDup->fetchColumn() > 0) {
-			echo json_encode(['successo' => false, 'messaggio' => 'Esiste già una bacheca con questo nome per lo stesso utente.']);
+			echo json_encode(['successo' => false, 'messaggio' => 'Bacheca omonima esistente.']);
 			exit;
 		}
 
 		try {
 			$pdo->beginTransaction();
-
-			$pdo->prepare("
-                UPDATE Bacheca
-                SET nome = :nuovoNome
-                WHERE nome = :nome AND codiceUtente = :owner
-            ")->execute([':nuovoNome' => $nuovoNome, ':nome' => $nome, ':owner' => $owner]);
-
+			$pdo->prepare("UPDATE Bacheca SET nome = :nuovoNome WHERE nome = :nome AND codiceUtente = :owner")
+			    ->execute([':nuovoNome' => $nuovoNome, ':nome' => $nome, ':owner' => $owner]);
 			$pdo->commit();
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
 			$pdo->rollBack();
-			echo json_encode(['successo' => false, 'messaggio' => 'Errore durante la modifica: ' . $e->getMessage()]);
+			echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
 		}
 
-		// ---------------------------------------------------------
-		// ELIMINA
-		// ---------------------------------------------------------
 	} elseif ($azione === 'elimina') {
-
 		try {
 			$pdo->beginTransaction();
-
-			$pdo->prepare("
-                DELETE FROM Bacheca
-                WHERE nome = :nome AND codiceUtente = :owner
-            ")->execute([':nome' => $nome, ':owner' => $owner]);
-
+			$pdo->prepare("DELETE FROM Bacheca WHERE nome = :nome AND codiceUtente = :owner")
+			    ->execute([':nome' => $nome, ':owner' => $owner]);
 			$pdo->commit();
 			echo json_encode(['successo' => true]);
 		} catch (Exception $e) {
 			$pdo->rollBack();
-			echo json_encode(['successo' => false, 'messaggio' => 'Errore durante la cancellazione: ' . $e->getMessage()]);
+			echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
 		}
 	} else {
 		echo json_encode(['successo' => false, 'messaggio' => 'Azione non riconosciuta.']);
 	}
-
 	$pdo = null;
 	exit;
 }
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="it">
 
 <head>
 	<?php include 'head.html'; ?>
@@ -305,7 +251,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		<?php
 		$filtro_config = [
 			'campi' => [
-				['tipo' => 'text', 'name' => 'titolo',      'label' => 'Nome Bacheca'],
+				['tipo' => 'text', 'name' => 'titolo',       'label' => 'Nome Bacheca'],
 				['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
 				['tipo' => 'text', 'name' => 'data',         'label' => 'Data (gg/mm/aaaa)'],
 			]
@@ -316,314 +262,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 	<div id="content">
 		<?php
-
 		// =========================================================
-		// VISTA DETTAGLIO BACHECA
+		// HELPER PER RECUPERARE UTENTI
 		// =========================================================
-		if (
-			!empty($_GET['vista']) &&
-			$_GET['vista'] === 'dettaglio' &&
-			!empty($_GET['bacheca']) &&
-			!empty($_GET['owner'])
-		) {
-			$bacheca = $_GET['bacheca'];
-			$owner   = $_GET['owner'];
-			$bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
-
-			echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
-			echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
-
-			// --- Utenti autorizzati ---
+		function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc) {
 			$stmt = $pdo->prepare("
-                SELECT
-                    u.codice    AS 'Codice',
-                    u.nickname    AS 'Nickname',
-                    u.nome        AS 'Nome',
-                    u.cognome     AS 'Cognome',
-                    u.dataNascita AS 'Data Nascita'
+                SELECT u.codice, u.nickname, u.nome, u.cognome, u.dataNascita
                 FROM UtenteAutorizzatoBacheca uab
                 JOIN Utente u ON u.codice = uab.utenteAutorizzato
-                WHERE uab.nomeBacheca = :bacheca
-                  AND uab.codUtente   = :owner
+                WHERE uab.nomeBacheca = :bacheca AND uab.codUtente = :owner
             ");
 			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
 			$utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-			echo "<h3>Utenti autorizzati: <strong>" . count($utenti) . "</strong></h3>";
+            
+            $datiUtenti = [];
+            foreach ($utenti as $u) {
+                $azioni = ((int)$u['codice'] !== (int)$owner)
+                    ? "<div style='text-align:center;'><img src='images/trash.png' alt='Elimina' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['codice']})\"></div>"
+                    : "<div style='text-align:center;'><small style='color:gray;'>Proprietario</small></div>";
 
-			echo "
-            <p>
-                <a onclick=\"aggiungiAutorizzato('{$bEnc}', {$owner})\" title='Autorizza utente' style='cursor:pointer;'>
-                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
-                    <strong>Aggiungi utente autorizzato</strong>
-                </a>
-            </p>
-            ";
+                $user_link = "utenti.php?utente=" . urlencode($u['codice']);
+                $htmlNickname = "<a href='" . htmlspecialchars($user_link) .  "'>" . htmlspecialchars($u['nickname']) . "</a>";
 
-			if ($utenti) {
-				echo "<table border='1'><tr>";
-				foreach (array_keys($utenti[0]) as $col) echo "<th>" . htmlspecialchars($col) . "</th>";
-				echo "<th>Azioni</th></tr>";
-				
-				foreach ($utenti as $u) {
-					echo "<tr>";
-					foreach ($u as $col => $v) {
-						if ($col === 'Codice') {
-							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
-						} elseif ($col === 'Data Nascita') {
-							echo "<td class='data'>" . formattaData((string)$v) . "</td>";
-						} else {
-							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
-						}
-					}
+                $datiUtenti[] = [
+                    'Nickname' => $htmlNickname,
+                    'Nome' => $u['nome'],
+                    'Cognome' => $u['cognome'],
+                    'Data Nascita' => $u['dataNascita'],
+                    'Azioni' => $azioni
+                ];
+            }
+            return [$datiUtenti, count($utenti)];
+		}
 
-					echo "<td style='text-align:center;'>";
-					if ((int)$u['Codice'] !== (int)$owner) {
-						echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['Codice']})\">";
-					} else {
-						echo "<small style='color:gray;'>Proprietario</small>";
-					}
-					echo "</td></tr>";
-				}
-				echo "</table>";
-			} else {
-				echo "<p>Nessun utente autorizzato.</p>";
-			}
-
-			// --- File ---
+		// =========================================================
+		// HELPER PER RECUPERARE FILE
+		// =========================================================
+		function getFileBacheca($pdo, $bacheca, $owner, $bEnc) {
 			$stmt = $pdo->prepare("
-                SELECT
-                    fm.numero     AS 'ID File',
-                    fm.titolo     AS 'Titolo',
-					u.nickname   AS 'Caricato Da',
-                    fm.dimensione AS 'Dimensione(MB)',
-                    fm.URL        AS 'URL',
-                    fm.tipo       AS 'Tipo'
+                SELECT fm.numero, fm.titolo, u.codice as caricatoDa, u.nickname, fm.dimensione, fm.URL, fm.tipo
                 FROM FilePubblicatoBacheca fb
                 JOIN FileMultimediale fm ON fm.numero = fb.file
                 JOIN Utente u ON u.codice = fm.caricatoDa
-                WHERE fb.nomeBacheca = :bacheca
-                  AND fb.codUtente   = :owner
+                WHERE fb.nomeBacheca = :bacheca AND fb.codUtente = :owner
             ");
 			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
 			$file = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			echo "<h3>File pubblicati: <strong>" . count($file) . "</strong></h3>";
+			$icon_types = [
+				'immagine' => 'images/image.png',
+				'video' => 'images/video.png',
+				'audio' => 'images/headphones.png',
+				'default' => 'images/document.png'
+			];
 
-			echo "
-            <p>
-                <a onclick=\"aggiungiFile('{$bEnc}', {$owner})\" title='Aggiungi file' style='cursor:pointer;'>
-                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
-                    <strong>Aggiungi file alla bacheca</strong>
-                </a>
-            </p>
-            ";
-
-			if ($file) {
-				echo "<table border='1'><tr>";
-				foreach (array_keys($file[0]) as $col) {
-					if ($col === 'ID File') continue; 
-					echo "<th>" . htmlspecialchars($col) . "</th>";
-				}
-				echo "<th>Azioni</th></tr>";
+            $datiFile = [];
+            foreach ($file as $f) {
+                $tipoStr = strtolower($f['tipo']);
+				$icon_path = $icon_types[$tipoStr] ?? $icon_types['default'];
 				
-				foreach ($file as $f) {
-					echo "<tr>";
-					foreach ($f as $col => $v) {
-						if ($col === 'ID File') continue;
+				$title = preg_replace('/\d{3}$/', '', $f['titolo']);
+                
+				$htmlFile = "<img class='icona icona-filetype' src='" . htmlspecialchars($icon_path) . "' alt='" . htmlspecialchars($tipoStr) . "'>";
+                $htmlFile .= "<a href='" . htmlspecialchars($f['URL']) . "' target='_blank'>" . htmlspecialchars($title) . "</a>";
+				
+				$owner_link = "utenti.php?utente=" . urlencode($f['caricatoDa']);
+				$htmlOwner = "<a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($f['nickname']) . "</a>";
 
-						if ($col === 'Dimensione(MB)') {
-							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
-						} elseif ($col === 'URL') {
-							$urlSicuro = htmlspecialchars((string)$v);
-							echo "<td><a href='{$urlSicuro}' target='_blank'>{$urlSicuro}</a></td>";
-						} elseif ($col === 'Tipo') {
-							$tipo = strtolower((string)$v);
-							$img = 'document.png'; 
-							if ($tipo === 'audio') $img = 'headphones.png';
-							elseif ($tipo === 'immagine') $img = 'image.png';
-							elseif ($tipo === 'video') $img = 'video.png';
-							
-							echo "<td style='text-align:center;'>
-									<img src='images/{$img}' alt='{$tipo}' title='{$tipo}' class='icona'>
-								  </td>";
-						} else {
-							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
-						}
-					}
+                $azioni   = "<div style='text-align:center;'><img src='images/trash.png' alt='Elimina' style='width:16px; cursor:pointer;' onclick=\"rimuoviFile('{$bEnc}', {$owner}, {$f['numero']})\"></div>";
 
-					echo "<td style='text-align:center;'>";
-					echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviFile('{$bEnc}', {$owner}, {$f['ID File']})\">";
-					echo "</td></tr>";
-				}
-				echo "</table>";
-			} else {
-				echo "<p>Nessun file pubblicato in questa bacheca.</p>";
-			}
+                $datiFile[] = [
+                    'File' => $htmlFile,
+					'Dimensione' => $f['dimensione'],
+                    'Proprietario' => $htmlOwner,
+                    'Azioni' => $azioni
+                ];
+            }
+            return [$datiFile, count($file)];
+		}
 
-			// =========================================================
-			// VISTA DETTAGLIO UTENTI
-			// =========================================================
-		} elseif (
-			!empty($_GET['vista']) &&
-			$_GET['vista'] === 'utenti' &&
-			!empty($_GET['bacheca']) &&
-			!empty($_GET['owner'])
-		) {
+		// =========================================================
+		// ROUTING VISTE
+		// =========================================================
+		if (!empty($_GET['vista']) && !empty($_GET['bacheca']) && !empty($_GET['owner'])) {
+			$vista   = $_GET['vista'];
 			$bacheca = $_GET['bacheca'];
 			$owner   = $_GET['owner'];
-			$bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
-
-			echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
-
-			echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
-
-			$stmt = $pdo->prepare("
-                SELECT
-                    u.codice      AS 'Codice',
-                    u.nickname    AS 'Nickname',
-                    u.nome        AS 'Nome',
-                    u.cognome     AS 'Cognome',
-                    u.dataNascita AS 'Data Nascita'
-                FROM UtenteAutorizzatoBacheca uab
-                JOIN Utente u ON u.codice = uab.utenteAutorizzato
-                WHERE uab.nomeBacheca = :bacheca
-                  AND uab.codUtente   = :owner
-            ");
-			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
-			$utenti = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-			echo "<h3>Utenti autorizzati: <strong>" . count($utenti) . "</strong></h3>";
-
-			echo "
-            <p>
-                <a onclick=\"aggiungiAutorizzato('{$bEnc}', {$owner})\" title='Autorizza utente' style='cursor:pointer;'>
-                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
-                    <strong>Aggiungi utente autorizzato</strong>
-                </a>
-            </p>
-            ";
-
-			if ($utenti) {
-				echo "<table border='1'><tr>";
-				foreach (array_keys($utenti[0]) as $col) echo "<th>" . htmlspecialchars($col) . "</th>";
-				echo "<th>Azioni</th></tr>";
-				
-				foreach ($utenti as $u) {
-					echo "<tr>";
-					foreach ($u as $col => $v) {
-						if ($col === 'Codice') {
-							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
-						} elseif ($col === 'Data Nascita') {
-							echo "<td class='data'>" . formattaData((string)$v) . "</td>";
-						} else {
-							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
-						}
-					}
-
-					echo "<td style='text-align:center;'>";
-					if ((int)$u['Codice'] !== (int)$owner) {
-						echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviAutorizzato('{$bEnc}', {$owner}, {$u['Codice']})\">";
-					} else {
-						echo "<small style='color:gray;'>Proprietario</small>";
-					}
-					echo "</td></tr>";
-				}
-				echo "</table>";
-			} else {
-				echo "<p>Nessun utente autorizzato.</p>";
-			}
-
-			// =========================================================
-			// VISTA DETTAGLIO FILE
-			// =========================================================
-		} elseif (
-			!empty($_GET['vista']) &&
-			$_GET['vista'] === 'file' &&
-			!empty($_GET['bacheca']) &&
-			!empty($_GET['owner'])
-		) {
-			$bacheca = $_GET['bacheca'];
-			$owner   = $_GET['owner'];
-			$bEnc = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
+			$bEnc    = htmlspecialchars(addslashes($bacheca), ENT_QUOTES);
 
 			echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
 			echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
 
-			$stmt = $pdo->prepare("
-                SELECT
-                    fm.numero     AS 'ID File',
-                    fm.titolo     AS 'Titolo',
-					u.nickname   AS 'Caricato Da',
-                    fm.dimensione AS 'Dimensione(MB)',
-                    fm.URL        AS 'URL',
-                    fm.tipo       AS 'Tipo'
-                FROM FilePubblicatoBacheca fb
-                JOIN FileMultimediale fm ON fm.numero = fb.file
-				JOIN Utente u ON u.codice = fm.caricatoDa
-                WHERE fb.nomeBacheca = :bacheca
-                  AND fb.codUtente   = :owner
-            ");
-			$stmt->execute([':bacheca' => $bacheca, ':owner' => $owner]);
-			$file = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-			echo "<h3>File pubblicati: <strong>" . count($file) . "</strong></h3>";
-
-			echo "
-            <p>
-                <a onclick=\"aggiungiFile('{$bEnc}', {$owner})\" title='Aggiungi file' style='cursor:pointer;'>
-                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
-                    <strong>Aggiungi file alla bacheca</strong>
-                </a>
-            </p>
-            ";
-
-			if ($file) {
-				echo "<table border='1'><tr>";
-				foreach (array_keys($file[0]) as $col) {
-					if ($col === 'ID File') continue; 
-					echo "<th>" . htmlspecialchars($col) . "</th>";
-				}
-				echo "<th>Azioni</th></tr>";
-				
-				foreach ($file as $f) {
-					echo "<tr>";
-					foreach ($f as $col => $v) {
-						if ($col === 'ID File') continue;
-
-						if ($col === 'Dimensione(MB)') {
-							echo "<td class='numero'>" . htmlspecialchars((string)$v) . "</td>";
-						} elseif ($col === 'URL') {
-							$urlSicuro = htmlspecialchars((string)$v);
-							echo "<td><a href='{$urlSicuro}' target='_blank'>{$urlSicuro}</a></td>";
-						} elseif ($col === 'Tipo') {
-							$tipo = strtolower((string)$v);
-							$img = 'document.png'; 
-							if ($tipo === 'audio') $img = 'headphones.png';
-							elseif ($tipo === 'immagine') $img = 'image.png';
-							elseif ($tipo === 'video') $img = 'video.png';
-							
-							echo "<td style='text-align:center;'>
-									<img src='images/{$img}' alt='{$tipo}' title='{$tipo}' class='icona'>
-								  </td>";
-						} else {
-							echo "<td>" . htmlspecialchars((string)$v) . "</td>";
-						}
-					}
-
-					echo "<td style='text-align:center;'>";
-					echo "<img src='images/trash.png' style='width:16px; cursor:pointer;' onclick=\"rimuoviFile('{$bEnc}', {$owner}, {$f['ID File']})\">";
-					echo "</td></tr>";
-				}
-				echo "</table>";
-			} else {
-				echo "<p>Nessun file pubblicato.</p>";
+			if ($vista === 'dettaglio' || $vista === 'utenti') {
+				list($datiUtenti, $countUtenti) = getUtentiBacheca($pdo, $bacheca, $owner, $bEnc);
+				echo "<h3>Utenti autorizzati: <strong>{$countUtenti}</strong></h3>";
+				echo "<p><a onclick=\"aggiungiAutorizzato('{$bEnc}', {$owner})\" style='cursor:pointer;'>
+                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> <strong>Aggiungi utente autorizzato</strong>
+                </a></p>";
+                stampaTabella($datiUtenti, ['Nickname', 'Azioni']);
 			}
 
-			// =========================================================
-			// VISTA PRINCIPALE
-			// =========================================================
+			if ($vista === 'dettaglio' || $vista === 'file') {
+				list($datiFile, $countFile) = getFileBacheca($pdo, $bacheca, $owner, $bEnc);
+				echo "<h3>File pubblicati: <strong>{$countFile}</strong></h3>";
+				echo "<p><a onclick=\"aggiungiFile('{$bEnc}', {$owner})\" style='cursor:pointer;'>
+                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> <strong>Aggiungi file alla bacheca</strong>
+                </a></p>";
+                stampaTabella($datiFile, ['File', 'Proprietario', 'Azioni']);
+			}
+
 		} else {
-
+			// =========================================================
+			// VISTA PRINCIPALE (ELENCO BACHECHE)
+			// =========================================================
 			$where  = [];
 			$params = [];
 
@@ -631,12 +382,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$where[]           = "b.nome LIKE :titolo";
 				$params[':titolo'] = '%' . $_GET['titolo'] . '%';
 			}
-
 			if (!empty($_GET['proprietario'])) {
 				$where[]                 = "u.nickname LIKE :proprietario";
 				$params[':proprietario'] = '%' . $_GET['proprietario'] . '%';
 			}
-
 			if (!empty($_GET['data'])) {
 				$dataConvertita = DateTime::createFromFormat('d/m/Y', $_GET['data']);
 				if ($dataConvertita) {
@@ -645,149 +394,100 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
-			// Paginazione
 			$elementiPerPagina = 50;
 			$pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
 			$offset = ($pagina - 1) * $elementiPerPagina;
 
-			// Conteggio 
-			$sqlCount = "
-                SELECT COUNT(*) AS totale
-                FROM Bacheca b
-                LEFT JOIN Utente u ON u.codice = b.codiceUtente
-            ";
+			$sqlCount = "SELECT COUNT(*) AS totale FROM Bacheca b LEFT JOIN Utente u ON u.codice = b.codiceUtente";
 			if ($where) $sqlCount .= " WHERE " . implode(" AND ", $where);
 			$stmtCount = $pdo->prepare($sqlCount);
 			$stmtCount->execute($params);
 			$totaleRisultati = $stmtCount->fetch(PDO::FETCH_ASSOC)['totale'];
 			$totalePagine    = ceil($totaleRisultati / $elementiPerPagina);
 
-			// Query principale 
 			$sql = "
                 SELECT
-                    b.codiceUtente                        AS 'owner',
-                    b.nome                                AS 'Nome Bacheca',
-					u.nickname                            AS 'Proprietario',
-                    b.dataCreazione                       AS 'Data Creazione',
+                    b.codiceUtente AS 'owner',
+                    b.nome AS 'Nome Bacheca',
+					u.nickname AS 'Proprietario',
+                    b.dataCreazione AS 'Data Creazione',
                     COUNT(DISTINCT uab.utenteAutorizzato) AS 'Numero Utenti',
-                    COUNT(DISTINCT f.file)                AS 'Numero File'
+                    COUNT(DISTINCT f.file) AS 'Numero File'
                 FROM Bacheca b
-                LEFT JOIN UtenteAutorizzatoBacheca uab
-                    ON uab.codUtente = b.codiceUtente AND uab.nomeBacheca = b.nome
-                LEFT JOIN FilePubblicatoBacheca f
-                    ON f.codUtente = b.codiceUtente AND f.nomeBacheca = b.nome
-                LEFT JOIN Utente u
-                    ON u.codice = b.codiceUtente
+                LEFT JOIN UtenteAutorizzatoBacheca uab ON uab.codUtente = b.codiceUtente AND uab.nomeBacheca = b.nome
+                LEFT JOIN FilePubblicatoBacheca f ON f.codUtente = b.codiceUtente AND f.nomeBacheca = b.nome
+                LEFT JOIN Utente u ON u.codice = b.codiceUtente
             ";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
 			$sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione LIMIT :limit OFFSET :offset";
 
 			$stmt = $pdo->prepare($sql);
-			foreach ($params as $chiave => $valore) {
-				$stmt->bindValue($chiave, $valore);
-			}
+			foreach ($params as $chiave => $valore) { $stmt->bindValue($chiave, $valore); }
 			$stmt->bindValue(':limit',  $elementiPerPagina, PDO::PARAM_INT);
 			$stmt->bindValue(':offset', $offset,            PDO::PARAM_INT);
 			$stmt->execute();
 			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche ($elementiPerPagina per pagina).</p>";
+			echo "<p><a onclick='aggiungiBacheca()' style='cursor:pointer;'>
+                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> <strong>Aggiungi una nuova bacheca</strong>
+                </a></p>";
 
-			echo "
-            <p>
-                <a onclick='aggiungiBacheca()' title='Aggiungi Bacheca' style='cursor:pointer;'>
-                    <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> 
-                    <strong>Aggiungi una nuova bacheca</strong>
-                </a>
-            </p>
-            ";
+            if (!empty($righe)) {
+                $datiBacheche = [];
+                foreach ($righe as $riga) {
+                    $p = $_GET;
+                    
+                    $p['vista']   = 'dettaglio';
+                    $p['bacheca'] = $riga['Nome Bacheca'];
+                    $p['owner']   = $riga['owner'];
+                    $htmlNome = "<a href='bacheche.php?" . http_build_query($p) . "'>" . htmlspecialchars($riga['Nome Bacheca']) . "</a>";
 
-			if (empty($righe)) {
-				echo "<p>Nessuna bacheca trovata.</p>";
-			} else {
-				echo "<table border='1'><tr>";
-				foreach (array_keys($righe[0]) as $colonna) {
-					if ($colonna === 'owner') continue;
-					echo "<th>" . htmlspecialchars($colonna) . "</th>";
-				}
-				echo "<th>Azioni</th>";
-				echo "</tr>";
+                    $p['vista']   = 'utenti';
+                    $htmlUtenti = "<div style='text-align: right;'><a href='bacheche.php?" . http_build_query($p) . "'>" . htmlspecialchars($riga['Numero Utenti']) . "</a></div>";
 
-				foreach ($righe as $riga) {
-					echo "<tr>";
-					$queryCorrente = $_GET;
+                    $p['vista']   = 'file';
+                    $htmlFile = "<div style='text-align: right;'><a href='bacheche.php?" . http_build_query($p) . "'>" . htmlspecialchars($riga['Numero File']) . "</a></div>";
 
-					foreach ($riga as $colonna => $valore) {
-						$val = (string)$valore;
+                    $proprietarioLink = "utenti.php?utente=" . urlencode($riga['owner']);
+                    $htmlProprietario = "<a href='" . htmlspecialchars($proprietarioLink) . "'>" . htmlspecialchars($riga['Proprietario']) . "</a>";
 
-						if ($colonna === 'owner') {
-							continue;
-						} elseif ($colonna === 'Nome Bacheca') {
-							$p = $queryCorrente;
-							$p['vista']   = 'dettaglio';
-							$p['bacheca'] = $riga['Nome Bacheca'];
-							$p['owner']   = $riga['owner'];
-							$url = 'bacheche.php?' . http_build_query($p);
-							echo "<td><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
-						} elseif ($colonna === 'Numero Utenti') {
-							$p = $queryCorrente;
-							$p['vista']   = 'utenti';
-							$p['bacheca'] = $riga['Nome Bacheca'];
-							$p['owner']   = $riga['owner'];
-							$url = 'bacheche.php?' . http_build_query($p);
-							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
-						} elseif ($colonna === 'Numero File') {
-							$p = $queryCorrente;
-							$p['vista']   = 'file';
-							$p['bacheca'] = $riga['Nome Bacheca'];
-							$p['owner']   = $riga['owner'];
-							$url = 'bacheche.php?' . http_build_query($p);
-							echo "<td class='numero'><a href='$url'>" . htmlspecialchars($val) . "</a></td>";
-						} elseif (is_numeric($val)) {
-							echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
-						} elseif (isData($val)) {
-							echo "<td class='data'>" . formattaData($val) . "</td>";
-						} else {
-							echo "<td>" . htmlspecialchars($val) . "</td>";
-						}
-					}
-					
-					$nomeEnc  = htmlspecialchars(addslashes($riga['Nome Bacheca']), ENT_QUOTES);
-					$ownerEnc = (int) $riga['owner'];
-					echo "
-                    <td style='text-align:center; white-space:nowrap;'>
-                        <span title='Modifica' style='cursor:pointer; font-size:1.1rem; margin-right:8px;'
-                                onclick=\"modificaBacheca('{$nomeEnc}', {$ownerEnc})\">
-                                <img src='images/edit.png' alt='Modifica' style='width:16px; height:16px;'>
-                            </span>
-                            <span title='Elimina' style='cursor:pointer; font-size:1.1rem;'
-                                onclick=\"eliminaBacheca('{$nomeEnc}', {$ownerEnc})\">
+                    $nomeEnc  = htmlspecialchars(addslashes($riga['Nome Bacheca']), ENT_QUOTES);
+                    $ownerEnc = (int) $riga['owner'];
+                    $azioni = "<div style='text-align:center; white-space:nowrap;'>
+                        <span title='Modifica' style='cursor:pointer; font-size:1.1rem; margin-right:8px;' onclick=\"modificaBacheca('{$nomeEnc}', {$ownerEnc})\">
+                            <img src='images/edit.png' alt='Modifica' style='width:16px; height:16px;'>
+                        </span>
+                        <span title='Elimina' style='cursor:pointer; font-size:1.1rem;' onclick=\"eliminaBacheca('{$nomeEnc}', {$ownerEnc})\">
                             <img src='images/trash.png' alt='Elimina' style='width:16px; height:16px;'>
                         </span>
-                    </td>
-                    ";
-					echo "</tr>";
-				}
-				echo "</table>";
+                    </div>";
 
-				// Navigazione pagine 
+                    $datiBacheche[] = [
+                        'Nome Bacheca' => $htmlNome,
+                        'Proprietario' => $htmlProprietario,
+                        'Data Creazione' => $riga['Data Creazione'],
+                        'Numero Utenti' => $htmlUtenti,
+                        'Numero File' => $htmlFile,
+                        'Azioni' => $azioni
+                    ];
+                }
+
+                stampaTabella($datiBacheche, ['Nome Bacheca', 'Proprietario', 'Numero Utenti', 'Numero File', 'Azioni']);
+
 				echo "<div style='margin-top:20px;'>";
 				$queryParams = $_GET;
-
 				if ($pagina > 1) {
 					$queryParams['pagina'] = $pagina - 1;
 					echo "<a href='?" . http_build_query($queryParams) . "'>&larr;</a>";
 				}
-
 				echo "<span style='margin:0 10px;'>Pagina $pagina di $totalePagine</span>";
-
 				if ($pagina < $totalePagine) {
 					$queryParams['pagina'] = $pagina + 1;
 					echo "<a href='?" . http_build_query($queryParams) . "'>&rarr;</a>";
 				}
-
 				echo "</div>";
-			}
+            }
 		}
 		?>
 	</div>
@@ -796,5 +496,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	<?php include 'footer.html'; ?>
 
 </body>
-
 </html>
