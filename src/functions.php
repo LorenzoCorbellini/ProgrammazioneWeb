@@ -56,7 +56,7 @@ function urlRitorno(): string
 // =========================================================
 // HELPER PER RECUPERARE UTENTI (Con filtro integrato)
 // =========================================================
-function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc)
+function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc, $sql_sort = 'u.nickname', $sort_dir = 'ASC')
 {
     // Costruzione dinamica della query
     $sql = "
@@ -65,7 +65,7 @@ function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc)
         JOIN Utente u ON u.codice = uab.utenteAutorizzato
         WHERE uab.nomeBacheca = :bacheca AND uab.codUtente = :owner
     ";
-    
+
     $params = [
         ':bacheca' => $bacheca,
         ':owner' => $owner
@@ -88,6 +88,9 @@ function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc)
         $sql .= " AND u.dataNascita >= :data_nascita";
         $params[':data_nascita'] = $_GET['data_nascita'];
     }
+
+    // Aggiunta ordinamento
+    $sql .= " ORDER BY {$sql_sort} {$sort_dir}";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
@@ -116,7 +119,7 @@ function getUtentiBacheca($pdo, $bacheca, $owner, $bEnc)
 // =========================================================
 // HELPER PER RECUPERARE FILE (Con filtro integrato)
 // =========================================================
-function getFileBacheca($pdo, $bacheca, $owner, $bEnc)
+function getFileBacheca($pdo, $bacheca, $owner, $bEnc, $sql_sort = 'fm.titolo', $sort_dir = 'ASC')
 {
     // Costruzione dinamica della query
     $sql = "
@@ -126,7 +129,7 @@ function getFileBacheca($pdo, $bacheca, $owner, $bEnc)
         JOIN Utente u ON u.codice = fm.caricatoDa
         WHERE fb.nomeBacheca = :bacheca AND fb.codUtente = :owner
     ";
-    
+
     $params = [
         ':bacheca' => $bacheca,
         ':owner' => $owner
@@ -137,6 +140,9 @@ function getFileBacheca($pdo, $bacheca, $owner, $bEnc)
         $sql .= " AND fm.titolo LIKE :file";
         $params[':file'] = '%' . $_GET['file'] . '%';
     }
+
+    // Aggiunta ordinamento
+    $sql .= " ORDER BY {$sql_sort} {$sort_dir}";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
