@@ -17,7 +17,7 @@
     --fs-nav: clamp(0.875rem, 1.2vw, 1.125rem);
     --fs-body: clamp(0.9375rem, 1.1vw, 1.125rem);
     --fs-input: clamp(0.875rem, 1vw, 1rem);
-    --fs-footer: clamp(0.75rem, 0.9vw, 0.875rem);
+    --fs-footer: clamp(1rem, 1.5vw, 1.25rem);
 }
 
 /* --- BASE --- */
@@ -209,7 +209,7 @@ footer {
     background: var(--primary);
     color: rgba(255, 255, 255, 0.9);
     text-align: center;
-    padding: clamp(4px, 0.6vh, 8px) 0;
+    padding: clamp(16px, 2vh, 16px) 0;
     box-sizing: border-box;
 }
 
@@ -238,11 +238,11 @@ td {
 }
 
 .icona {
-    width:16px;
-    height:16px;
+    width: 16px;
+    height: 16px;
 }
 
 .icona-filetype {
-    vertical-align:middle;
-    margin-right:10px;
+    vertical-align: middle;
+    margin-right: 10px;
 }
