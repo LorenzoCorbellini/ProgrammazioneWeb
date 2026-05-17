@@ -51,6 +51,10 @@ body {
     overflow-y: auto;
 }
 
+.info-risultati {
+    color: #6b7280;
+}
+
 /* --- HEADER --- */
 h1 {
     margin: 0;
@@ -149,7 +153,7 @@ li.navbar a:hover:not(.active) {
 }
 
 #filtro input::placeholder {
-    color: rgba(245, 240, 230, 0.6);
+    color: var(--text-light);
 }
 
 /* --- CHECKBOX --- */
@@ -245,4 +249,25 @@ td {
 .icona-filetype {
     vertical-align: middle;
     margin-right: 10px;
+}
+
+.btn-aggiungi {
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;       
+    align-items: center;
+    gap: 8px;                   
+    color: var(--accent);       
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.btn-aggiungi:hover {
+    color: var(--accent-hover); 
+    transform: translateY(-1px); 
+}
+
+.btn-aggiungi img {
+    width: 20px;
+    height: 20px;
+    vertical-align: middle;
 }

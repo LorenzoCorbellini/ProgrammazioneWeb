@@ -1,8 +1,7 @@
 <?php
-// === AGGIUNGI QUESTE DUE RIGHE FONDAMENTALI ===
 require_once __DIR__ . '/config/db.php';
 require_once __DIR__ . '/functions.php';
-// ==============================================
+
 
 // =========================================================
 // CRUD
@@ -211,7 +210,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->rollBack();
             echo json_encode(['successo' => false, 'messaggio' => $e->getMessage()]);
         }
-
     } elseif ($azione === 'elimina') {
         try {
             $pdo->beginTransaction();
@@ -234,4 +232,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode(['successo' => false, 'messaggio' => 'Metodo non consentito. Usa POST.']);
     exit;
 }
-?>

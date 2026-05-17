@@ -185,7 +185,6 @@ function getParametriOrdinamento(array $allowed_sorts, string $default_col = 'da
         $sort_dir = $default_dir;
     }
 
-    // Se l'utente tenta di forzare una colonna non consentita, usa il default
     $sql_sort = $allowed_sorts[$sort_col] ?? $allowed_sorts[$default_col];
 
     return [$sort_col, $sort_dir, $sql_sort];
@@ -206,13 +205,16 @@ function generaIntestazioniOrdinabili(array $colonneOrdinabili, string $sort_col
         $params = $_GET;
         $params['sort'] = $chiaveSort;
         
-        // Se si sta già ordinando per questa colonna, cliccandoci inverte l'ordine. Altrimenti parte da ASC
         $params['dir'] = ($sort_col === $chiaveSort && $sort_dir === 'ASC') ? 'DESC' : 'ASC';
         
         $url = "?" . http_build_query($params);
         $icona = "<img src='images/bi-directional-arrow.png' alt='Ordina' style='width:12px; margin-left:5px; vertical-align:middle;'>";
         
-        $customHeaders[$titoloVisibile] = "{$titoloVisibile} <a href='{$url}'>{$icona}</a>";
+        $customHeaders[$titoloVisibile] = "
+            <a href='{$url}' style='text-decoration: none; color: inherit; display: inline-flex; align-items: center; justify-content: center; gap: 5px; width: 100%; height: 100%;'>
+                " . htmlspecialchars($titoloVisibile) . " {$icona}
+            </a>
+        ";
     }
     
     return $customHeaders;
