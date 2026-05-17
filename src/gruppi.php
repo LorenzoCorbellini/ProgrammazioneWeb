@@ -28,9 +28,9 @@ require_once __DIR__ . '/functions.php';
 
 			$sql = "
 			SELECT 
-				utente.nickname,
-				gruppo.nome,
-				gruppo.dataCreazione
+				utente.nickname as 'Nickname',
+				gruppo.nome as 'Nome Gruppo',
+				gruppo.dataCreazione as 'Data Creazione'
 			FROM gruppo
 			JOIN utente
 			ON gruppo.creatoDa = utente.codice

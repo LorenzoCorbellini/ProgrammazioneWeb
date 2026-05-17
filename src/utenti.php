@@ -18,10 +18,39 @@ require_once __DIR__ . '/functions.php';
 	<div class="main-container">
 		<aside class="sidebar">
 			<?php include 'nav.html'; ?>
+
+			<?php
+			$filtro_config = [
+				'campi' => [
+					['tipo'  => 'text',  'name' => 'filename', 'label' => 'File'],
+					[
+						'tipo'  => 'select',
+						'name' => 'filetype',
+						'label' => 'Tipo',
+						'opzioni' => ['Immagini', 'Audio', 'Video']
+					]
+				]
+			];
+			include 'filter.php';
+
+			$filetypes = [
+				'Immagini' => 'immagine',
+				'Audio' => 'audio',
+				'Video' => 'video'
+			];
+			?>
 		</aside>
 
 		<div id="content">
 			<?php
+		// =========================================================
+		// PAGINAZIONE
+		// =========================================================
+			$elementiPerPagina = 50;
+			$pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
+			$offset = ($pagina - 1) * $elementiPerPagina;
+
+
 			// In $where memorizziamo i filtri da aggiungere alla query, scritti in sql
 			// in $params memorizziamo i valori richiesti da filtrare
 			$where = [];
@@ -35,7 +64,10 @@ require_once __DIR__ . '/functions.php';
 
 			// Salviamo la query in una stringa per poterla modificare dinamicamente
 			$sql = "
-				SELECT nickname,nome,cognome,dataNascita
+				SELECT nickname as 'Nickname',
+					nome as 'Nome',
+					cognome as 'Cognome',
+					dataNascita as 'Data di Nascita'
 				FROM utente
 			";
 			// Se c'è almeno un parametro nella GET, allora aggiungiamo il filtro
@@ -50,29 +82,10 @@ require_once __DIR__ . '/functions.php';
 			$stmt->execute($params);
 			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			array_shift($righe);
+
 			stampaTabella($righe);
 
-/*
-			echo "<table border='1'>
-			<tr>
-				<th>Nickname</th>
-				<th>Nome</th>
-				<th>Cognome</th>
-				<th>Data nascita</th>
-			</tr>";
 
-			foreach ($righe as $row) {
-
-				echo "<tr>";
-				echo "<td>" . $row['nickname'] . "</td>";
-				echo "<td>" . $row['nome'] . "</td>";
-				echo "<td>" . $row['cognome'] . "</td>";
-				echo "<td>" . $row['dataNascita'] . "</td>";
-				echo "</tr>";
-			}
-
-			echo "</table>";*/
 			?>
 		</div>
 	</div>
