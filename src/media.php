@@ -41,10 +41,20 @@ require_once __DIR__ . '/functions.php';
 		
 		<div id="content">
 			<?php 
-			/* FILTRI */
+		
+		/* PAGINAZIONE */
+				$limit = 50;
+				if (!empty($_GET["pagina"])) { 
+					$pn  = $_GET["pagina"];
+				} else { 
+					$pn=1; 
+				};
+				$start_from = ($pn - 1) * $limit;
+				
+				/* FILTRI */
 				$where  = [];
 				$params = [];
-	
+				
 				// Filtro per nome del file
 				if (!empty($_GET['filename'])) {
 					$where[]             = "fmm.titolo LIKE :filename";
@@ -59,6 +69,7 @@ require_once __DIR__ . '/functions.php';
 	
 			/* VISTA DEI DATI */
 	
+				// Query per ottenere i dati da mostare all'utente
 				$sql = "
 					SELECT
 						fmm.caricatoDa	AS 'owner',
@@ -73,6 +84,7 @@ require_once __DIR__ . '/functions.php';
 							ON fmm.caricatoDa = u.codice
 				";
 				if ($where) $sql .= " WHERE " . implode(" AND ", $where);
+				$sql .= " LIMIT " . (int)$start_from . ", " . (int)$limit;
 	
 				/*
 				 * prepara la query (statement)
@@ -82,73 +94,19 @@ require_once __DIR__ . '/functions.php';
 				$stmt = $pdo->prepare($sql);
 				$stmt->execute($params);
 				$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
-	
-				if (empty($righe)) {
-					echo "<p>Nessun file trovato.</p>";
-				} else {
-					echo "<table border='1'><tr>";
-	
-					$mappa_colonne = [
-						'title'     => 'File',
-						'size' 		=> 'Dimensione',
-						'type'      => 'Tipo',
-						'nickname'  => 'Proprietario'
-					];
-					
-					/* Imposta i nomi delle colonne,
-					 * saltando quelle nella blacklist.
-					 * Il parame 'true' di 'in_array(...)' impone strict comparison
-					 */
-					$blacklist = ['owner', 'file_id', 'url', 'type'];
-					foreach (array_keys($righe[0]) as $colonna) {
-						if (in_array($colonna, $blacklist, true)) continue;
-						$titolo_visibile = $mappa_colonne[$colonna] ?? ucfirst($colonna);
-						echo "<th>" . htmlspecialchars($titolo_visibile) . "</th>";
-					}
-	
-					echo "</tr>";
-					
-					$icon_types = [
-						'immagine' => 'images/image.png',
-						'video' => 'images/video.png',
-						'audio' => 'images/headphones.png',
-	
-						'default' => 'images/document.png'
-					];
-	
-					foreach ($righe as $riga) {
-						echo "<tr>";
-		
-						// $item as $key => $value
-						foreach ($riga as $colonna => $valore) {
-							$val = (string) $valore;
-							if (in_array($colonna, $blacklist, true)) {
-								continue;
-							// Mostra link cliccabile sui nomi dei file
-							} elseif ($colonna === 'title') {
-								// Rimuove i 3 numeri alla fine del filename
-								$title = preg_replace('/\d{3}$/', '', $riga['title']);
-								$icon_path = $icon_types[$riga['type']] ?? $icon_types['default'];
-								
-								echo "<td class='titolo'>";
-								echo "<img class='icona icona-filetype' src='" . htmlspecialchars($icon_path) . "' alt='" . htmlspecialchars($riga['type']) . "'>";
-								echo "<a href='" . htmlspecialchars($riga['url']) .  "'>" . htmlspecialchars($title) . "</a>";
-								echo "</td>";
-							} elseif ($colonna === 'nickname') {
-								$owner_link = "utenti.php?utente=" . urlencode($riga['owner']);
-								echo "<td class='titolo'><a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($val) . "</a></td>";
-							} elseif (is_numeric($val)) {
-								echo "<td class='numero'>" . htmlspecialchars($val) . "</td>";
-							} elseif (isData($val)) {
-								echo "<td class='data'>"   . htmlspecialchars($val) . "</td>";
-							} else {
-								echo "<td>"                . htmlspecialchars($val) . "</td>";
-							}
-						}
-						echo "</tr>";
-					}
-					echo "</table>";
-				}
+
+				// Query per ottenere il numero di file memorizzati nel db
+				$sql_count = "SELECT COUNT(*) FROM FileMultimediale as fmm";
+				if ($where) $sql_count .= " WHERE " . implode(" AND ", $where);
+
+				$stmt_count = $pdo->prepare($sql_count);
+				$stmt_count->execute($params);
+				$numero_records = $stmt_count->fetchColumn();
+
+				$numero_pagine = ceil($numero_records / $limit);
+
+				$tabella_html = get_media_table($righe, $numero_records, $limit);
+				echo $tabella_html;
 			?>
 		</div>
 	</div>

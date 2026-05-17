@@ -41,3 +41,76 @@ function urlRitorno(): string {
 	$q = http_build_query($p);
 	return 'bacheche.php' . ($q ? "?$q" : '');
 }
+
+// Restituisce l'HTML della tabella dei file multimediali
+function get_media_table(array $righe, int $numero_records, int $limit): string {
+    if (empty($righe)) {
+        return "<p>Nessun file trovato.</p>";
+    }
+
+    $html = "<p>Trovati <strong>$numero_records</strong> file ($limit per pagina).</p>";
+
+    $html .= "<table border='1'><tr>";
+
+    $mappa_colonne = [
+        'title'     => 'File',
+        'size' 		=> 'Dimensione',
+        'type'      => 'Tipo',
+        'nickname'  => 'Proprietario'
+    ];
+    
+    /* Imposta i nomi delle colonne,
+        * saltando quelle nella blacklist.
+        * Il parame 'true' di 'in_array(...)' impone strict comparison
+        */
+    $blacklist = ['owner', 'file_id', 'url', 'type'];
+    foreach (array_keys($righe[0]) as $colonna) {
+        if (in_array($colonna, $blacklist, true)) continue;
+        $titolo_visibile = $mappa_colonne[$colonna] ?? ucfirst($colonna);
+        $html .= "<th>" . htmlspecialchars($titolo_visibile) . "</th>";
+    }
+
+    $html .= "</tr>";
+    
+    $icon_types = [
+        'immagine' => 'images/image.png',
+        'video' => 'images/video.png',
+        'audio' => 'images/headphones.png',
+
+        'default' => 'images/document.png'
+    ];
+
+    foreach ($righe as $riga) {
+        $html .= "<tr>";
+
+        // $item as $key => $value
+        foreach ($riga as $colonna => $valore) {
+            $val = (string) $valore;
+            if (in_array($colonna, $blacklist, true)) {
+                continue;
+            // Mostra link cliccabile sui nomi dei file
+            } elseif ($colonna === 'title') {
+                // Rimuove i 3 numeri alla fine del filename
+                $title = preg_replace('/\d{3}$/', '', $riga['title']);
+                $icon_path = $icon_types[$riga['type']] ?? $icon_types['default'];
+                
+                $html .= "<td class='titolo'>";
+                $html .= "<img class='icona icona-filetype' src='" . htmlspecialchars($icon_path) . "' alt='" . htmlspecialchars($riga['type']) . "'>";
+                $html .= "<a href='" . htmlspecialchars($riga['url']) .  "'>" . htmlspecialchars($title) . "</a>";
+                $html .= "</td>";
+            } elseif ($colonna === 'nickname') {
+                $owner_link = "utenti.php?utente=" . urlencode($riga['owner']);
+                $html .= "<td class='titolo'><a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($val) . "</a></td>";
+            } elseif (is_numeric($val)) {
+                $html .= "<td class='numero'>" . htmlspecialchars($val) . "</td>";
+            } elseif (isData($val)) {
+                $html .= "<td class='data'>"   . htmlspecialchars($val) . "</td>";
+            } else {
+                $html .= "<td>"                . htmlspecialchars($val) . "</td>";
+            }
+        }
+        $html .= "</tr>";
+    }
+    $html .= "</table>";
+    return $html;
+}
