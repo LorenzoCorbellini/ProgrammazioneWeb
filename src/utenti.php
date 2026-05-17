@@ -4,35 +4,39 @@ require_once __DIR__ . '/functions.php';
 ?>
 <!DOCTYPE html>
 <html>
+
 <head>
 	<title>SalMeet</title>
 	<?php include 'head.html'; ?>
 </head>
 
 <body>
-	<header><h1 id="hcod1">Utenti</h1></header>
-	
-	<div class="main-container">
-	<aside class="sidebar">
-		<?php include 'nav.html'; ?>
-	</aside>
+	<header>
+		<h1 id="hcod1">Utenti</h1>
+	</header>
 
-	<div id="content">     
-		<?php
+	<div class="main-container">
+		<aside class="sidebar">
+			<?php include 'nav.html'; ?>
+		</aside>
+
+		<div id="content">
+			<?php
 			// In $where memorizziamo i filtri da aggiungere alla query, scritti in sql
 			// in $params memorizziamo i valori richiesti da filtrare
 			$where = [];
-            $params = [];
+			$params = [];
 
-            // La GET contiene il codice dell'utente richiesto
-            if (!empty($_GET['utente'])) {
-                $where[] = "codice = :codice";
-                $params[':codice'] = $_GET['utente'];
-            }
+			// La GET contiene il codice dell'utente richiesto
+			if (!empty($_GET['utente'])) {
+				$where[] = "codice = :codice";
+				$params[':codice'] = $_GET['utente'];
+			}
 
 			// Salviamo la query in una stringa per poterla modificare dinamicamente
 			$sql = "
-				SELECT * FROM utente
+				SELECT nickname,nome,cognome,dataNascita
+				FROM utente
 			";
 			// Se c'è almeno un parametro nella GET, allora aggiungiamo il filtro
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
@@ -46,29 +50,34 @@ require_once __DIR__ . '/functions.php';
 			$stmt->execute($params);
 			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-	echo "<table border='1'>
+			array_shift($righe);
+			stampaTabella($righe);
+
+/*
+			echo "<table border='1'>
 			<tr>
 				<th>Nickname</th>
 				<th>Nome</th>
 				<th>Cognome</th>
 				<th>Data nascita</th>
 			</tr>";
-				
-		foreach($righe as $row){
 
-		echo "<tr>";
-			echo "<td>".$row['nickname']."</td>";
-			echo "<td>".$row['nome']."</td>";
-			echo "<td>".$row['cognome']."</td>";
-			echo "<td>".$row['dataNascita']."</td>";
-		echo "</tr>";
-		}
+			foreach ($righe as $row) {
 
-	echo "</table>";
-		?>
-	</div>
+				echo "<tr>";
+				echo "<td>" . $row['nickname'] . "</td>";
+				echo "<td>" . $row['nome'] . "</td>";
+				echo "<td>" . $row['cognome'] . "</td>";
+				echo "<td>" . $row['dataNascita'] . "</td>";
+				echo "</tr>";
+			}
+
+			echo "</table>";*/
+			?>
+		</div>
 	</div>
 
 	<?php include 'footer.html'; ?>
 </body>
+
 </html>
