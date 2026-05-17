@@ -11,12 +11,31 @@
 //         ['tipo' => 'select',   'name' => 'stato',     'label' => 'Stato',
 //          'opzioni' => ['Attivo', 'Archiviato']],
 //         ['tipo' => 'checkbox', 'name' => 'solo_pub',  'label' => 'Solo pubblici'],
+//         ['tipo' => 'hidden',   'name' => 'vista',     'value' => 'utenti'] // Campo nascosto
 //     ]
 // ];
 
 if (empty($filtro_config['campi'])) return;
 
 $action = htmlspecialchars($filtro_config['action'] ?? $_SERVER['PHP_SELF']);
+
+// =========================================================
+// 1. Costruzione dinamica dell'URL per il tasto "Reimposta"
+// =========================================================
+$reset_params = [];
+if (isset($filtro_config['campi'])) {
+    foreach ($filtro_config['campi'] as $campo) {
+        // Salviamo SOLO i campi nascosti per non perdere la vista attuale
+        if ($campo['tipo'] === 'hidden' && isset($campo['value'])) {
+            $reset_params[$campo['name']] = $campo['value'];
+        }
+    }
+}
+
+$reset_url = $action;
+if (!empty($reset_params)) {
+    $reset_url .= '?' . http_build_query($reset_params);
+}
 ?>
 
 <div id="filtro">
@@ -24,13 +43,23 @@ $action = htmlspecialchars($filtro_config['action'] ?? $_SERVER['PHP_SELF']);
     <form method="GET" action="<?= $action ?>">
         <?php foreach ($filtro_config['campi'] as $campo):
             $name  = htmlspecialchars($campo['name']);
-            $label = htmlspecialchars($campo['label']);
-            $value = htmlspecialchars($_GET[$campo['name']] ?? '');
+            $label = htmlspecialchars($campo['label'] ?? '');
+            
+            // Se è un campo hidden, diamo priorità al valore definito in config
+            if ($campo['tipo'] === 'hidden') {
+                $value = htmlspecialchars($_GET[$campo['name']] ?? $campo['value'] ?? '');
+            } else {
+                $value = htmlspecialchars($_GET[$campo['name']] ?? '');
+            }
         ?>
 
-            <?php if ($campo['tipo'] === 'checkbox'): ?>
+            <?php if ($campo['tipo'] === 'hidden'): ?>
+                
+                <input type="hidden" name="<?= $name ?>" value="<?= $value ?>">
 
-                <label class="checkbox-label">
+            <?php elseif ($campo['tipo'] === 'checkbox'): ?>
+
+                <label>
                     <input type="checkbox"
                            name="<?= $name ?>"
                            value="1"
@@ -68,7 +97,7 @@ $action = htmlspecialchars($filtro_config['action'] ?? $_SERVER['PHP_SELF']);
 
         <button type="submit">Applica</button>
         <button type="button" class="reset"
-                onclick="window.location='<?= $action ?>'">
+                onclick="window.location='<?= htmlspecialchars($reset_url) ?>'">
             Reimposta
         </button>
     </form>

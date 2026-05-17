@@ -23,14 +23,69 @@ require_once __DIR__ . '/functions.php';
             <?php include 'nav.html'; ?>
 
             <?php
-            $filtro_config = [
-                'campi' => [
-                    ['tipo' => 'text', 'name' => 'titolo',       'label' => 'Nome Bacheca'],
-                    ['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
-                    ['tipo' => 'date', 'name' => 'data',         'label' => 'Data Creazione (Da)'],
-                ]
-            ];
-            include 'filter.php';
+            // =========================================================
+            // GESTIONE DINAMICA DEL FILTRO NELLA SIDEBAR
+            // =========================================================
+            $vista_corrente = $_GET['vista'] ?? '';
+
+            if ($vista_corrente === 'dettaglio') {
+                // Filtro combinato per la vista Dettaglio (cerca sia tra gli utenti che tra i file)
+                $filtro_config = [
+                    'campi' => [
+                        ['tipo' => 'hidden', 'name' => 'vista',   'value' => 'dettaglio', 'label' => ''],
+                        ['tipo' => 'hidden', 'name' => 'bacheca', 'value' => $_GET['bacheca'] ?? '', 'label' => ''],
+                        ['tipo' => 'hidden', 'name' => 'owner',   'value' => $_GET['owner'] ?? '', 'label' => ''],
+                        
+                        // Campi ricerca Utenti
+                        ['tipo' => 'text',   'name' => 'utente',  'label' => 'Nickname Utente'],
+                        ['tipo' => 'text',   'name' => 'nome',    'label' => 'Nome Utente'],
+                        ['tipo' => 'text',   'name' => 'cognome', 'label' => 'Cognome Utente'],
+                        ['tipo' => 'date',   'name' => 'data_nascita', 'label' => 'Data di Nascita (Da)'],
+                        
+                        // Campi ricerca File
+                        ['tipo' => 'text',   'name' => 'file',    'label' => 'Nome File'],
+                    ]
+                ];
+                include 'filter.php';
+
+            } elseif ($vista_corrente === 'utenti') {
+                // Filtro specifico per la vista Utenti Autorizzati
+                $filtro_config = [
+                    'campi' => [
+                        ['tipo' => 'hidden', 'name' => 'vista',   'value' => 'utenti', 'label' => ''],
+                        ['tipo' => 'hidden', 'name' => 'bacheca', 'value' => $_GET['bacheca'] ?? '', 'label' => ''],
+                        ['tipo' => 'hidden', 'name' => 'owner',   'value' => $_GET['owner'] ?? '', 'label' => ''],
+                        ['tipo' => 'text',   'name' => 'utente',  'label' => 'Nickname'],
+                        ['tipo' => 'text',   'name' => 'nome',    'label' => 'Nome'],
+                        ['tipo' => 'text',   'name' => 'cognome', 'label' => 'Cognome'],
+                        ['tipo' => 'date',   'name' => 'data_nascita', 'label' => 'Data di Nascita (Da)'],
+                    ]
+                ];
+                include 'filter.php';
+
+            } elseif ($vista_corrente === 'file') {
+                // Filtro specifico per la vista File Pubblicati
+                $filtro_config = [
+                    'campi' => [
+                        ['tipo' => 'hidden', 'name' => 'vista',   'value' => 'file', 'label' => ''],
+                        ['tipo' => 'hidden', 'name' => 'bacheca', 'value' => $_GET['bacheca'] ?? '', 'label' => ''],
+                        ['tipo' => 'hidden', 'name' => 'owner',   'value' => $_GET['owner'] ?? '', 'label' => ''],
+                        ['tipo' => 'text',   'name' => 'file',    'label' => 'Nome File'],
+                    ]
+                ];
+                include 'filter.php';
+
+            } else {
+                // Filtro standard per l'elenco generale delle bacheche
+                $filtro_config = [
+                    'campi' => [
+                        ['tipo' => 'text', 'name' => 'titolo',       'label' => 'Nome Bacheca'],
+                        ['tipo' => 'text', 'name' => 'proprietario', 'label' => 'Proprietario (nickname)'],
+                        ['tipo' => 'date', 'name' => 'data',         'label' => 'Data Creazione (Da)'],
+                    ]
+                ];
+                include 'filter.php';
+            }
             ?>
         </aside>
 
@@ -48,15 +103,22 @@ require_once __DIR__ . '/functions.php';
                 echo "<p><a href='" . urlRitorno() . "'>&larr; Torna alle bacheche</a></p>";
                 echo "<h2>" . htmlspecialchars($bacheca) . "</h2>";
 
-                $stmtBacheca = $pdo->prepare("SELECT dataCreazione FROM Bacheca WHERE nome = :nome AND codiceUtente = :owner");
-                $stmtBacheca->execute([':nome' => $bacheca, ':owner' => $owner]);
-                $datiBachecaDb = $stmtBacheca->fetch(PDO::FETCH_ASSOC);
+                // LA DATA DI CREAZIONE VIENE MOSTRATA SOLO NELLA VISTA DETTAGLIO
+                if ($vista === 'dettaglio') {
+                    $stmtBacheca = $pdo->prepare("SELECT dataCreazione FROM Bacheca WHERE nome = :nome AND codiceUtente = :owner");
+                    $stmtBacheca->execute([':nome' => $bacheca, ':owner' => $owner]);
+                    $datiBachecaDb = $stmtBacheca->fetch(PDO::FETCH_ASSOC);
 
-                if ($datiBachecaDb && !empty($datiBachecaDb['dataCreazione'])) {
-                    $dataFormattata = function_exists('formattaData') ? formattaData($datiBachecaDb['dataCreazione']) : date('d/m/Y', strtotime($datiBachecaDb['dataCreazione']));
-                    echo "<p style='margin-bottom: 25px;'><strong>Data di Creazione:</strong> " . htmlspecialchars($dataFormattata) . "</p>";
+                    if ($datiBachecaDb && !empty($datiBachecaDb['dataCreazione'])) {
+                        $dataFormattata = function_exists('formattaData') ? formattaData($datiBachecaDb['dataCreazione']) : date('d/m/Y', strtotime($datiBachecaDb['dataCreazione']));
+                        echo "<p style='margin-bottom: 25px;'><strong>Data di Creazione:</strong> " . htmlspecialchars($dataFormattata) . "</p>";
+                    }
+                } else {
+                    // Un piccolo margine per staccare il titolo dai contenuti nelle viste 'utenti' e 'file'
+                    echo "<div style='margin-bottom: 25px;'></div>";
                 }
 
+                // VISTA TABELLA UTENTI (Attiva in 'dettaglio' o in 'utenti')
                 if ($vista === 'dettaglio' || $vista === 'utenti') {
                     list($datiUtenti, $countUtenti) = getUtentiBacheca($pdo, $bacheca, $owner, $bEnc);
                     echo "<h3>Utenti autorizzati: <strong>{$countUtenti}</strong></h3>";
@@ -66,6 +128,7 @@ require_once __DIR__ . '/functions.php';
                     stampaTabella($datiUtenti, ['Nickname', 'Azioni']);
                 }
 
+                // VISTA TABELLA FILE (Attiva in 'dettaglio' o in 'file')
                 if ($vista === 'dettaglio' || $vista === 'file') {
                     list($datiFile, $countFile) = getFileBacheca($pdo, $bacheca, $owner, $bEnc);
                     echo "<h3>File pubblicati: <strong>{$countFile}</strong></h3>";
