@@ -22,7 +22,7 @@ require_once __DIR__ . '/functions.php';
 			<?php
 			$filtro_config = [
 				'campi' => [
-					['tipo'  => 'text',  'name' => 'filename', 'label' => 'File'],
+				
 					[
 						'tipo'  => 'select',
 						'name' => 'filetype',
