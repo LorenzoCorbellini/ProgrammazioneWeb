@@ -15,14 +15,18 @@ require_once __DIR__ . '/functions.php';
 	<header>
 		<h1 id="hcod1">Media</h1>
 	</header>
-	
+
 	<div class="main-container">
 
 		<aside class="sidebar">
 			<?php include 'nav.html';
 			$filtro_config = [
 				'campi' => [
-					['tipo'  => 'text',  'name' => 'filename', 'label' => 'File'],
+					[
+						'tipo'  => 'text',
+						'name' => 'filename',
+						'label' => 'File'
+					],
 					[
 						'tipo'  => 'select',
 						'name' => 'filetype',
@@ -38,12 +42,12 @@ require_once __DIR__ . '/functions.php';
 				'Audio' => 'audio',
 				'Video' => 'video'
 			];
-		?>
-	</aside>
-		
-	<div id="content">
-		<?php 
-		
+			?>
+		</aside>
+
+		<div id="content">
+			<?php
+
 			/* PAGINAZIONE */
 			$limit = 50;
 			$pagina = isset($_GET["pagina"]) ? max(1, (int)$_GET["pagina"]) : 1;
@@ -62,9 +66,9 @@ require_once __DIR__ . '/functions.php';
 				$where[] = "fmm.tipo = :filetype";
 				$params[':filetype'] =  $filetypes[$_GET['filetype']];
 			}
-	
+
 			/* VISTA DEI DATI */
-	
+
 			// Query per ottenere i dati da mostrare all'utente
 			$sql = "
 				SELECT
@@ -81,7 +85,7 @@ require_once __DIR__ . '/functions.php';
 			";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
 			$sql .= " LIMIT " . (int)$start_from . ", " . (int)$limit;
-	
+
 			/*
 			 * prepara la query (statement)
 			 * la esegue con i $params 
@@ -108,22 +112,22 @@ require_once __DIR__ . '/functions.php';
 					'audio' => 'images/headphones.png',
 					'default' => 'images/document.png'
 				];
-				
+
 				$datiFormattati = [];
 				foreach ($righe as $riga) {
 					$tipoStr = strtolower($riga['type']);
 					$icon_path = $icon_types[$tipoStr] ?? $icon_types['default'];
-					
+
 					// Rimuove i 3 numeri alla fine del filename
 					$title = preg_replace('/\d{3}$/', '', $riga['title']);
-					
+
 					$htmlFile = "<img class='icona icona-filetype' src='" . htmlspecialchars($icon_path) . "' alt='" . htmlspecialchars($tipoStr) . "'>";
 					$htmlFile .= "<a href='" . htmlspecialchars($riga['url']) . "' target='_blank'>" . htmlspecialchars($title) . "</a>";
-					
+
 					// Crea il link al proprietario
 					$owner_link = "utenti.php?utente=" . urlencode($riga['owner']);
 					$htmlOwner = "<a href='" . htmlspecialchars($owner_link) .  "'>" . htmlspecialchars($riga['nickname']) . "</a>";
-					
+
 					// Preparazione della riga da inviare a stampaTabella
 					$datiFormattati[] = [
 						'File' => $htmlFile,
@@ -132,7 +136,7 @@ require_once __DIR__ . '/functions.php';
 						'Proprietario' => $htmlOwner
 					];
 				}
-				
+
 				// Stampa la tabella passando l'array delle colonne che contengono codice HTML
 				stampaTabella($datiFormattati, ['File', 'Proprietario']);
 
@@ -152,10 +156,11 @@ require_once __DIR__ . '/functions.php';
 			} else {
 				echo "<p>Nessun file trovato.</p>";
 			}
-		?>
+			?>
 		</div>
 	</div>
 
 	<?php include 'footer.html'; ?>
 </body>
+
 </html>

@@ -16,7 +16,7 @@ function formattaData(string $val): string
 function stampaTabella(array $righe, array $htmlColumns = [], array $customHeaders = []): void
 {
     if (empty($righe)) {
-        echo "<p>Nessun risultato trovato.</p>";
+        echo "<p class='info-risultati'>Nessun risultato trovato.</p>";
         return;
     }
     echo "<table border='1'><tr>";
