@@ -1,7 +1,4 @@
-// =========================================================
-// COSTANTI
-// =========================================================
-// Correggi il nome del file qui!
+
 const API_URL = 'bachecheAPI.php';
 
 // Funzione helper per le chiamate fetch standardizzate
@@ -21,15 +18,15 @@ function eseguiRichiesta(bodyData, messaggioSuccesso) {
         }
     })
     .catch((error) => {
-        console.error(error); // Utile per vedere i dettagli nella console del browser
+        console.error(error);
         alert('Errore di comunicazione con il server.');
     });
 }
 
+// =========================================================
+// GESTIONE BACHECHE
+// =========================================================
 
-// ---------------------------------------------------------
-// AGGIUNGI BACHECA
-// ---------------------------------------------------------
 function aggiungiBacheca() {
     const nome = prompt("Inserisci il nome per la nuova bacheca:");
     if (nome === null) return; 
@@ -40,7 +37,6 @@ function aggiungiBacheca() {
         return;
     }
 
-    // Qui richiediamo l'ID dell'utente (owner)
     const ownerInput = prompt("Inserisci il codice utente del proprietario:");
     if (ownerInput === null) return;
     
@@ -54,12 +50,9 @@ function aggiungiBacheca() {
         azione: 'aggiungi',
         nome: nomeTrim,
         owner: owner
-    }, 'Bacheca creata con successo!');
+    }, 'Bacheca creata con successo.');
 }
 
-// ---------------------------------------------------------
-// MODIFICA NOME BACHECA
-// ---------------------------------------------------------
 function modificaBacheca(nomeAttuale, owner) {
     const nuovoNome = prompt(`Nuovo nome per la bacheca:\n"${nomeAttuale}"`, nomeAttuale);
     if (nuovoNome === null) return; 
@@ -79,27 +72,22 @@ function modificaBacheca(nomeAttuale, owner) {
     if (!conferma) return;
 
     eseguiRichiesta({
-        azione: 'modifica',
-        nome: nomeAttuale,
-        owner: owner,
-        nuovoNome: nuovoNomeTrim
-    }, 'Nome bacheca modificato con successo!');
+        azione:      'modifica',
+        nome:        nomeAttuale,
+        owner:       owner,
+        nuovoNome:   nuovoNomeTrim
+    }, 'Bacheca rinominata con successo.');
 }
 
-// ---------------------------------------------------------
-// ELIMINA BACHECA
-// ---------------------------------------------------------
 function eliminaBacheca(nome, owner) {
-    const conferma = confirm(`ATTENZIONE!\nSei sicuro di voler eliminare la bacheca "${nome}"?\nQuesta operazione non può essere annullata.`);
-    if (!conferma) return;
+    if (!confirm(`Sei sicuro di voler eliminare definitivamente la bacheca "${nome}"?`)) return;
 
     eseguiRichiesta({
         azione: 'elimina',
         nome: nome,
         owner: owner
-    }, 'Bacheca eliminata con successo!');
+    }, 'Bacheca eliminata con successo.');
 }
-
 
 // =========================================================
 // GESTIONE UTENTI AUTORIZZATI
@@ -108,9 +96,9 @@ function eliminaBacheca(nome, owner) {
 function aggiungiAutorizzato(nomeBacheca, owner) {
     const utenteInput = prompt("Inserisci il codice dell'utente da autorizzare:");
     if (utenteInput === null) return;
-    
-    const nuovoUtente = parseInt(utenteInput, 10);
-    if (isNaN(nuovoUtente) || nuovoUtente <= 0) {
+
+    const idUtente = parseInt(utenteInput, 10);
+    if (isNaN(idUtente) || idUtente <= 0) {
         alert('Codice utente non valido.');
         return;
     }
@@ -119,7 +107,7 @@ function aggiungiAutorizzato(nomeBacheca, owner) {
         azione: 'aggiungi_autorizzato',
         nome: nomeBacheca,
         owner: owner,
-        nuovoUtente: nuovoUtente
+        utenteDaAutorizzare: idUtente
     }, 'Utente autorizzato con successo.');
 }
 
@@ -131,9 +119,8 @@ function rimuoviAutorizzato(nomeBacheca, owner, utenteDaRimuovere) {
         nome: nomeBacheca,
         owner: owner,
         utenteDaRimuovere: utenteDaRimuovere
-    }, null); // Nessun alert di successo per rendere la rimozione più fluida
+    }, 'Utente rimosso con successo dalla bacheca.'); 
 }
-
 
 // =========================================================
 // GESTIONE FILE NELLA BACHECA
@@ -165,5 +152,5 @@ function rimuoviFile(nomeBacheca, owner, fileDaRimuovere) {
         nome: nomeBacheca,
         owner: owner,
         fileDaRimuovere: fileDaRimuovere
-    }, null); // Nessun alert di successo, fa solo il reload
+    }, 'File rimosso con successo dalla bacheca.');
 }
