@@ -394,6 +394,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
+			// --- GESTIONE ORDINAMENTO ---
+			$sort_col = $_GET['sort'] ?? 'data';
+			$sort_dir = strtoupper($_GET['dir'] ?? 'DESC');
+			if ($sort_dir !== 'ASC' && $sort_dir !== 'DESC') $sort_dir = 'DESC';
+
+			$allowed_sorts = [
+				'nome' => 'b.nome',
+				'data' => 'b.dataCreazione'
+			];
+			$sql_sort = $allowed_sorts[$sort_col] ?? 'b.dataCreazione';
+
 			$elementiPerPagina = 50;
 			$pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
 			$offset = ($pagina - 1) * $elementiPerPagina;
@@ -419,7 +430,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 LEFT JOIN Utente u ON u.codice = b.codiceUtente
             ";
 			if ($where) $sql .= " WHERE " . implode(" AND ", $where);
-			$sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione LIMIT :limit OFFSET :offset";
+			
+			// Applica l'ordinamento dinamico
+			$sql .= " GROUP BY b.codiceUtente, u.nickname, b.nome, b.dataCreazione ORDER BY {$sql_sort} {$sort_dir} LIMIT :limit OFFSET :offset";
 
 			$stmt = $pdo->prepare($sql);
 			foreach ($params as $chiave => $valore) { $stmt->bindValue($chiave, $valore); }
@@ -473,7 +486,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ];
                 }
 
-                stampaTabella($datiBacheche, ['Nome Bacheca', 'Proprietario', 'Numero Utenti', 'Numero File', 'Azioni']);
+				// HEADER PERSONALIZZATI CON L'IMMAGINE DI ORDINAMENTO
+				$paramsNome = $_GET;
+				$paramsNome['sort'] = 'nome';
+				$paramsNome['dir']  = ($sort_col === 'nome' && $sort_dir === 'ASC') ? 'DESC' : 'ASC';
+
+				$paramsData = $_GET;
+				$paramsData['sort'] = 'data';
+				$paramsData['dir']  = ($sort_col === 'data' && $sort_dir === 'ASC') ? 'DESC' : 'ASC';
+
+				$customHeaders = [
+					'Nome Bacheca'   => "Nome Bacheca <a href='?" . http_build_query($paramsNome) . "'><img src='images/bi-directional-arrow.png' alt='Ordina' style='width:12px; margin-left:5px; vertical-align:middle;'></a>",
+					'Data Creazione' => "Data Creazione <a href='?" . http_build_query($paramsData) . "'><img src='images/bi-directional-arrow.png' alt='Ordina' style='width:12px; margin-left:5px; vertical-align:middle;'></a>"
+				];
+
+                stampaTabella($datiBacheche, ['Nome Bacheca', 'Proprietario', 'Numero Utenti', 'Numero File', 'Azioni'], $customHeaders);
 
 				echo "<div style='margin-top:20px;'>";
 				$queryParams = $_GET;

@@ -10,7 +10,8 @@ function formattaData(string $val): string
     return $d ? $d->format('d/m/Y') : htmlspecialchars($val);
 }
 
-function stampaTabella(array $righe, array $htmlColumns = []): void
+// Aggiunto array opzionale $customHeaders per permettere HTML nei titoli
+function stampaTabella(array $righe, array $htmlColumns = [], array $customHeaders = []): void
 {
     if (empty($righe)) {
         echo "<p>Nessun risultato trovato.</p>";
@@ -18,7 +19,9 @@ function stampaTabella(array $righe, array $htmlColumns = []): void
     }
     echo "<table border='1'><tr>";
     foreach (array_keys($righe[0]) as $colonna) {
-        echo "<th>" . htmlspecialchars($colonna) . "</th>";
+        // Se c'è un header personalizzato usa quello, altrimenti usa il nome della colonna testuale
+        $titolo = isset($customHeaders[$colonna]) ? $customHeaders[$colonna] : htmlspecialchars($colonna);
+        echo "<th>" . $titolo . "</th>";
     }
     echo "</tr>";
     foreach ($righe as $riga) {
@@ -50,7 +53,6 @@ function urlRitorno(): string {
 	return 'bacheche.php' . ($q ? "?$q" : '');
 }
 
-// Restituisce l'HTML della tabella dei file multimediali
 function get_media_table(array $righe, int $numero_records, int $limit): string {
     if (empty($righe)) {
         return "<p>Nessun file trovato.</p>";
@@ -80,7 +82,6 @@ function get_media_table(array $righe, int $numero_records, int $limit): string 
         'immagine' => 'images/image.png',
         'video' => 'images/video.png',
         'audio' => 'images/headphones.png',
-
         'default' => 'images/document.png'
     ];
 
