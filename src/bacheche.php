@@ -290,7 +290,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> <strong>Aggiungi file alla bacheca</strong>
                 </a></p>";
                 
-                // Usiamo direttamente stampaTabella
                 stampaTabella($datiFile, ['File', 'Proprietario', 'Azioni']);
 			}
 
@@ -317,27 +316,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
-			// --- GESTIONE ORDINAMENTO ---
-			$sort_col = $_GET['sort'] ?? 'data';
-			$sort_dir = strtoupper($_GET['dir'] ?? 'DESC');
-			if ($sort_dir !== 'ASC' && $sort_dir !== 'DESC') $sort_dir = 'DESC';
-
-			$allowed_sorts = [
-				'nome' => 'b.nome',
-				'data' => 'b.dataCreazione'
-			];
-			$sql_sort = $allowed_sorts[$sort_col] ?? 'b.dataCreazione';
-
-			$elementiPerPagina = 50;
-			$pagina = isset($_GET['pagina']) ? max(1, (int)$_GET['pagina']) : 1;
-			$offset = ($pagina - 1) * $elementiPerPagina;
+			list($pagina, $limit, $offset) = getParametriPaginazione(50);
+			
+			list($sort_col, $sort_dir, $sql_sort) = getParametriOrdinamento([
+			    'nome' => 'b.nome',
+			    'data' => 'b.dataCreazione'
+			], 'data', 'DESC');
 
 			$sqlCount = "SELECT COUNT(*) AS totale FROM Bacheca b LEFT JOIN Utente u ON u.codice = b.codiceUtente";
 			if ($where) $sqlCount .= " WHERE " . implode(" AND ", $where);
 			$stmtCount = $pdo->prepare($sqlCount);
 			$stmtCount->execute($params);
 			$totaleRisultati = $stmtCount->fetch(PDO::FETCH_ASSOC)['totale'];
-			$totalePagine    = ceil($totaleRisultati / $elementiPerPagina);
 
 			$sql = "
                 SELECT
@@ -358,12 +348,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 			$stmt = $pdo->prepare($sql);
 			foreach ($params as $chiave => $valore) { $stmt->bindValue($chiave, $valore); }
-			$stmt->bindValue(':limit',  $elementiPerPagina, PDO::PARAM_INT);
-			$stmt->bindValue(':offset', $offset,            PDO::PARAM_INT);
+			$stmt->bindValue(':limit',  $limit,  PDO::PARAM_INT);
+			$stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 			$stmt->execute();
 			$righe = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche ($elementiPerPagina per pagina).</p>";
+			echo "<p>Trovate <strong>$totaleRisultati</strong> bacheche ($limit per pagina).</p>";
 			echo "<p><a onclick='aggiungiBacheca()' style='cursor:pointer;'>
                     <img src='images/add.png' alt='Aggiungi' style='width:20px; vertical-align:middle;'> <strong>Aggiungi una nuova bacheca</strong>
                 </a></p>";
@@ -408,33 +398,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ];
                 }
 
-				$paramsNome = $_GET;
-				$paramsNome['sort'] = 'nome';
-				$paramsNome['dir']  = ($sort_col === 'nome' && $sort_dir === 'ASC') ? 'DESC' : 'ASC';
-
-				$paramsData = $_GET;
-				$paramsData['sort'] = 'data';
-				$paramsData['dir']  = ($sort_col === 'data' && $sort_dir === 'ASC') ? 'DESC' : 'ASC';
-
-				$customHeaders = [
-					'Nome Bacheca'   => "Nome Bacheca <a href='?" . http_build_query($paramsNome) . "'><img src='images/bi-directional-arrow.png' alt='Ordina' style='width:12px; margin-left:5px; vertical-align:middle;'></a>",
-					'Data Creazione' => "Data Creazione <a href='?" . http_build_query($paramsData) . "'><img src='images/bi-directional-arrow.png' alt='Ordina' style='width:12px; margin-left:5px; vertical-align:middle;'></a>"
-				];
+                // Generazione dinamica delle intestazioni coi link di ordinamento
+				$customHeaders = generaIntestazioniOrdinabili([
+				    'Nome Bacheca'   => 'nome',
+				    'Data Creazione' => 'data'
+				], $sort_col, $sort_dir);
 
                 stampaTabella($datiBacheche, ['Nome Bacheca', 'Proprietario', 'Numero Utenti', 'Numero File', 'Azioni'], $customHeaders);
 
-				echo "<div style='margin-top:20px;'>";
-				$queryParams = $_GET;
-				if ($pagina > 1) {
-					$queryParams['pagina'] = $pagina - 1;
-					echo "<a href='?" . http_build_query($queryParams) . "'>&larr;</a>";
-				}
-				echo "<span style='margin:0 10px;'>Pagina $pagina di $totalePagine</span>";
-				if ($pagina < $totalePagine) {
-					$queryParams['pagina'] = $pagina + 1;
-					echo "<a href='?" . http_build_query($queryParams) . "'>&rarr;</a>";
-				}
-				echo "</div>";
+                // Stampa dinamica della Paginazione
+				stampaPaginazione($pagina, $totaleRisultati, $limit);
             }
 		}
 		?>
